@@ -1,22 +1,20 @@
-name: Node.js CI
+name: Package AT-Commands in npm
 
 on:
     push:
-        branches: [main]
-    pull_request:
-        branches: [main]
+        tags:
+            - '*'
 
 jobs:
-    build:
+    build-app:
         env:
             CI: true
-            IMAGE_NAME: juanjofranco/nodejs-seed
 
         runs-on: ubuntu-latest
 
         strategy:
             matrix:
-                node-version: [10.x, 12.x, 14.x, 15.x]
+                node-version: [17.x]
 
         steps:
             - uses: actions/checkout@v2
@@ -24,21 +22,11 @@ jobs:
               uses: actions/setup-node@v1
               with:
                   node-version: ${{ matrix.node-version }}
+                  registry-url: 'https://registry.npmjs.org'
             - run: npm ci
             - run: npm run build --if-present
             - run: npm run lint
-            - run: npm run test-ci
-
-            - name: Publish Code Coverage
-              if: github.ref == 'refs/heads/main'
-              uses: codecov/codecov-action@v1
-
-            - name: Docker Build and Publish
-              if: github.ref == 'refs/heads/main'
-              uses: docker/build-push-action@v1
-              with:
-                  username: ${{ secrets.DOCKER_USERNAME }}
-                  password: ${{ secrets.DOCKER_PASSWORD }}
-                  repository: ${{ env.IMAGE_NAME }}
-                  tag_with_ref: true
-                  tag_with_sha: true
+            # - run: npm run test-ci
+            - run: npm publish
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM }}
