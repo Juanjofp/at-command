@@ -6,16 +6,16 @@ async function executeCommandAndParseResponse(
     commandName: string,
     command: () => Promise<number>,
     parser: Transform,
-    { validation = 'ok', timeout = 5000 }: ExecutionOptions = {}
+    { validation = 'ok', timeout = 5000 }: ExecutionOptions
 ) {
     return new Promise((resolve, reject) => {
         let lastData = '';
-        function parserListener(data: string) {
-            lastData = data;
-            if (data.toLowerCase().startsWith(validation)) {
+        function parserListener(data: Buffer) {
+            lastData = data.toString('utf8');
+            if (lastData.toLowerCase().startsWith(validation)) {
                 clearTimeout(timeoutId);
                 parser.removeListener('data', parserListener);
-                return void resolve({ data, command: commandName });
+                return void resolve({ data: lastData, command: commandName });
             }
         }
         parser.on('error', reject);

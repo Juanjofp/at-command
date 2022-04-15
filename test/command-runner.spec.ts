@@ -1,4 +1,4 @@
-import { CommandRunnerBuilder } from '@/main';
+import { CommandRunnerBuilder, RunCommandTimeoutError } from '@/main';
 import { CommandRunnerBuilderMock } from '@/mocks';
 
 jest.setTimeout(30000);
@@ -30,6 +30,32 @@ describe('command-runner', () => {
         expect(port.isOpen()).toBe(false);
         await port.open();
         expect(port.isOpen()).toBe(true);
+        await port.close();
+        expect(port.isOpen()).toBe(false);
+    });
+
+    it('should open once', async () => {
+        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        expect(port.isOpen()).toBe(false);
+        await port.open();
+        expect(port.isOpen()).toBe(true);
+        await port.open();
+        expect(port.isOpen()).toBe(true);
+        await port.open();
+        expect(port.isOpen()).toBe(true);
+        await port.close();
+        expect(port.isOpen()).toBe(false);
+    });
+
+    it('should close once', async () => {
+        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        expect(port.isOpen()).toBe(false);
+        await port.open();
+        expect(port.isOpen()).toBe(true);
+        await port.close();
+        expect(port.isOpen()).toBe(false);
+        await port.close();
+        expect(port.isOpen()).toBe(false);
         await port.close();
         expect(port.isOpen()).toBe(false);
     });
@@ -78,6 +104,30 @@ describe('command-runner', () => {
                 expect(error.message).toBe(
                     'Timeout error: 0 bytes received for command: at+version'
                 );
+            }
+        } finally {
+            await runner.close();
+        }
+    });
+
+    it('should throw an error if not validation match', async () => {
+        expect.assertions(3);
+        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+
+        try {
+            await runner.open();
+            await runner.runCommand('at+version', {
+                timeout: 1000,
+                validation: 'NOOP'
+            });
+        } catch (error) {
+            if (error instanceof RunCommandTimeoutError) {
+                expect(error.message).toBe(
+                    'Timeout error: 14 bytes received for command: at+version'
+                );
+                expect(error.command).toBe('at+version');
+                expect(error.dataReceived).toBe('OK V3.0.0.14.H');
             }
         } finally {
             await runner.close();
@@ -141,6 +191,66 @@ describe('command-runner Mock', () => {
                     'Error: No such file or directory, cannot open /invalid/path'
                 );
             }
+        }
+    });
+
+    it('should run a command and get response', async () => {
+        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
+        const runner = CommandRunnerBuilderMock.buildCommandRunner(port);
+        CommandRunnerBuilderMock.mockReadFromSerialPort('OK V3.0.0.14.H');
+        try {
+            await runner.open();
+            const response = await runner.runCommand('at+version');
+            expect(response).toEqual({
+                data: 'OK V3.0.0.14.H',
+                command: 'at+version'
+            });
+        } finally {
+            await runner.close();
+        }
+    });
+
+    it('should throw an error if not respond in 3 seconds', async () => {
+        expect.assertions(1);
+        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
+        const runner = CommandRunnerBuilderMock.buildCommandRunner(port);
+
+        try {
+            await runner.open();
+            await runner.runCommand('at+version', { timeout: 3000 });
+        } catch (error) {
+            if (error instanceof Error) {
+                expect(error.message).toBe(
+                    'Timeout error: 0 bytes received for command: at+version'
+                );
+            }
+        } finally {
+            await runner.close();
+        }
+    });
+
+    it('should throw an error if not validation match', async () => {
+        expect.assertions(3);
+        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
+        const runner = CommandRunnerBuilderMock.buildCommandRunner(port);
+        CommandRunnerBuilderMock.mockReadFromSerialPort('OK V3.0.0.14.H');
+
+        try {
+            await runner.open();
+            await runner.runCommand('at+version', {
+                timeout: 1000,
+                validation: 'NOOP'
+            });
+        } catch (error) {
+            if (error instanceof RunCommandTimeoutError) {
+                expect(error.message).toBe(
+                    'Timeout error: 14 bytes received for command: at+version'
+                );
+                expect(error.command).toBe('at+version');
+                expect(error.dataReceived).toBe('OK V3.0.0.14.H');
+            }
+        } finally {
+            await runner.close();
         }
     });
 });
