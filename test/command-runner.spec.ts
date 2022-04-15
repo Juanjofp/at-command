@@ -1,6 +1,7 @@
 import { CommandRunnerBuilder } from '@/main';
 import { CommandRunnerBuilderMock } from '@/mocks';
 
+jest.setTimeout(30000);
 const serialPath = '/dev/tty.usbmodem214301';
 
 describe('command-runner', () => {
@@ -46,14 +47,38 @@ describe('command-runner', () => {
         }
     });
 
-    it.skip('should run a command and get response', async () => {
+    it('should run a command and get response', async () => {
         const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
         const runner = CommandRunnerBuilder.buildCommandRunner(port);
 
         try {
             await runner.open();
             const response = await runner.runCommand('at+version');
-            expect(response).toBe('OK');
+            expect(response).toEqual({
+                data: 'OK V3.0.0.14.H',
+                command: 'at+version'
+            });
+        } finally {
+            await runner.close();
+        }
+    });
+
+    it('should throw an error if not respond in 3 seconds', async () => {
+        expect.assertions(1);
+        const port = await CommandRunnerBuilder.buildSerialPort(serialPath, {
+            baudRate: 9600
+        });
+        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+
+        try {
+            await runner.open();
+            await runner.runCommand('at+version', { timeout: 3000 });
+        } catch (error) {
+            if (error instanceof Error) {
+                expect(error.message).toBe(
+                    'Timeout error: 0 bytes received for command: at+version'
+                );
+            }
         } finally {
             await runner.close();
         }

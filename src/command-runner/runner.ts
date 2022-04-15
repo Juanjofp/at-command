@@ -1,36 +1,35 @@
-import { ATSerialPort } from './models';
+import { ATSerialPort, RunCommandTimeoutError } from './models';
 import { Transform } from 'stream';
 
+export type ExecutionOptions = { validation?: string; timeout?: number };
 async function executeCommandAndParseResponse(
+    commandName: string,
     command: () => Promise<number>,
     parser: Transform,
-    validation = 'ok'
+    { validation = 'ok', timeout = 5000 }: ExecutionOptions = {}
 ) {
     return new Promise((resolve, reject) => {
         let lastData = '';
         function parserListener(data: string) {
-            console.log('Response cmd parsed:', data);
             lastData = data;
             if (data.toLowerCase().startsWith(validation)) {
-                resolve(data);
+                clearTimeout(timeoutId);
                 parser.removeListener('data', parserListener);
-                return;
+                return void resolve({ data, command: commandName });
             }
         }
+        parser.on('error', reject);
         parser.on('data', parserListener);
         command();
-        setTimeout(() => {
-            reject(new Error(`Last data received: ${lastData}`));
+        const timeoutId = setTimeout(() => {
+            reject(new RunCommandTimeoutError(commandName, lastData));
             parser.removeListener('data', parserListener);
-        }, 5000);
+            parser.removeListener('error', reject);
+        }, timeout);
     });
 }
 
 export function buildCommandRunner(serialPort: ATSerialPort) {
-    serialPort.read().on('data', function (data: string) {
-        console.log('Global Data:', data);
-    });
-
     // Open errors will be emitted as an error event
     // serialPort.on('error', function (err) {
     //     console.log('Error: ', err.message);
@@ -47,14 +46,15 @@ export function buildCommandRunner(serialPort: ATSerialPort) {
         await serialPort.close();
     }
 
-    async function runCommand(cmd: string, validation = 'ok') {
+    async function runCommand(cmd: string, options: ExecutionOptions = {}) {
         const command = async () => {
             return await serialPort.write(cmd + '\r\n');
         };
         return await executeCommandAndParseResponse(
+            cmd,
             command,
             serialPort.read(),
-            validation
+            options
         );
     }
 

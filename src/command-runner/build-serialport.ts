@@ -47,6 +47,7 @@ function buildATSerialPort(port: SerialPort): ATSerialPort {
     async function open(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (port.isOpen) return void resolve(undefined);
+
             port.open(error => {
                 if (error)
                     return void reject(
@@ -86,7 +87,7 @@ export async function buildSerialPort(
         const serialPort = new SerialPort({
             path,
             ...options,
-            baudRate: options.baudRate || 9600,
+            baudRate: options.baudRate || 119200,
             autoOpen: false
         });
 

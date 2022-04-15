@@ -35,3 +35,12 @@ export type ATSerialPort = {
     // on(event: 'error', listener: (err: Error) => void): ATSerialPort;
     close(): Promise<void>;
 };
+
+export class RunCommandTimeoutError extends Error {
+    constructor(readonly command: string, readonly dataReceived: string) {
+        super(
+            `Timeout error: ${dataReceived.length} bytes received for command: ${command}`
+        );
+        this.name = 'RunCommandError';
+    }
+}
