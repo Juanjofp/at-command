@@ -1,6 +1,11 @@
 {
-    "ignore": ["node_modules"],
-    "watch": ["src", "package-lock.json"],
-    "exec": "tsc -p tsconfig-build.json && babel-node dist/main.js --inspect=0.0.0.0:9229",
+    "ignore": [
+        "node_modules"
+    ],
+    "watch": [
+        "dist/main.js",
+        "package-lock.json"
+    ],
+    "exec": "node dist/main.js --inspect=0.0.0.0:9229",
     "ext": "ts"
 }

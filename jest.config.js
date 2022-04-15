@@ -6,10 +6,10 @@ module.exports = {
     collectCoverageFrom: ['src/**/*.ts', '!src/main.ts'],
     coverageThreshold: {
         global: {
-            statements: 100,
-            branches: 100,
-            functions: 100,
-            lines: 100
+            statements: 50,
+            branches: 30,
+            functions: 50,
+            lines: 50
         }
     },
     watchPlugins: [
