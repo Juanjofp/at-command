@@ -30,15 +30,6 @@ async function executeCommandAndParseResponse(
 }
 
 export function buildCommandRunner(serialPort: ATSerialPort) {
-    // Open errors will be emitted as an error event
-    // serialPort.on('error', function (err) {
-    //     console.log('Error: ', err.message);
-    // });
-
-    // const res0 = await runCommand('at+version', serialPort, parser);
-    // console.log('Command Result at+version', res0);
-    // serialPort.close();
-
     async function open() {
         await serialPort.open();
     }
