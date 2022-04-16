@@ -1,5 +1,8 @@
 import { buildSerialPort } from '@/command-runner/build-serialport';
-import { buildCommandRunner } from '@/command-runner/runner';
+import {
+    buildCommandRunner,
+    CommandRunner as CommandRunnerType
+} from '@/command-runner/runner';
 import { getSerialPortList } from '@/command-runner/list-serialport';
 
 export const CommandRunnerBuilder = {
@@ -8,4 +11,5 @@ export const CommandRunnerBuilder = {
     getSerialPortList
 };
 export type CommandRunnerBuilder = typeof CommandRunnerBuilder;
+export type CommandRunner = CommandRunnerType;
 export * from '@/command-runner/models';

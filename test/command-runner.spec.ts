@@ -1,10 +1,9 @@
 import { CommandRunnerBuilder, RunCommandTimeoutError } from '@/main';
 import { CommandRunnerBuilderMock } from '@/mocks';
 
-jest.setTimeout(30000);
 const serialPath = '/dev/tty.usbmodem214301';
 
-describe('command-runner', () => {
+describe.skip('command-runner', () => {
     it('should return a list of SerialPorts', async () => {
         const list = await CommandRunnerBuilder.getSerialPortList();
         expect(list).toEqual(
@@ -81,7 +80,7 @@ describe('command-runner', () => {
             await runner.open();
             const response = await runner.runCommand('at+version');
             expect(response).toEqual({
-                data: 'OK V3.0.0.14.H',
+                data: ['OK V3.0.0.14.H'],
                 command: 'at+version'
             });
         } finally {
@@ -102,7 +101,7 @@ describe('command-runner', () => {
         } catch (error) {
             if (error instanceof Error) {
                 expect(error.message).toBe(
-                    'Timeout error: 0 bytes received for command: at+version'
+                    'Timeout error: 0 lines received for command: at+version'
                 );
             }
         } finally {
@@ -119,15 +118,15 @@ describe('command-runner', () => {
             await runner.open();
             await runner.runCommand('at+version', {
                 timeout: 1000,
-                validation: 'NOOP'
+                validation: () => false
             });
         } catch (error) {
             if (error instanceof RunCommandTimeoutError) {
                 expect(error.message).toBe(
-                    'Timeout error: 14 bytes received for command: at+version'
+                    'Timeout error: 1 lines received for command: at+version'
                 );
-                expect(error.command).toBe('at+version');
-                expect(error.dataReceived).toBe('OK V3.0.0.14.H');
+                expect(error.command).toEqual('at+version');
+                expect(error.dataReceived).toEqual(['OK V3.0.0.14.H']);
             }
         } finally {
             await runner.close();
@@ -202,7 +201,7 @@ describe('command-runner Mock', () => {
             await runner.open();
             const response = await runner.runCommand('at+version');
             expect(response).toEqual({
-                data: 'OK V3.0.0.14.H',
+                data: ['OK V3.0.0.14.H'],
                 command: 'at+version'
             });
         } finally {
@@ -221,7 +220,7 @@ describe('command-runner Mock', () => {
         } catch (error) {
             if (error instanceof Error) {
                 expect(error.message).toBe(
-                    'Timeout error: 0 bytes received for command: at+version'
+                    'Timeout error: 0 lines received for command: at+version'
                 );
             }
         } finally {
@@ -239,15 +238,15 @@ describe('command-runner Mock', () => {
             await runner.open();
             await runner.runCommand('at+version', {
                 timeout: 1000,
-                validation: 'NOOP'
+                validation: () => false
             });
         } catch (error) {
             if (error instanceof RunCommandTimeoutError) {
                 expect(error.message).toBe(
-                    'Timeout error: 14 bytes received for command: at+version'
+                    'Timeout error: 1 lines received for command: at+version'
                 );
                 expect(error.command).toBe('at+version');
-                expect(error.dataReceived).toBe('OK V3.0.0.14.H');
+                expect(error.dataReceived).toEqual(['OK V3.0.0.14.H']);
             }
         } finally {
             await runner.close();

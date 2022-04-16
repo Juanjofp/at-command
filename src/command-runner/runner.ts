@@ -1,18 +1,28 @@
-import { ATSerialPort, RunCommandTimeoutError } from './models';
+import {
+    ATSerialPort,
+    CommandResult,
+    ExecutionOptions,
+    RunCommandTimeoutError
+} from './models';
 import { Transform } from 'stream';
 
-export type ExecutionOptions = { validation?: string; timeout?: number };
+function defaultValidationPredicate(result: string[]): boolean {
+    return result.some(line => line.toLowerCase().startsWith('ok'));
+}
 async function executeCommandAndParseResponse(
     commandName: string,
     command: () => Promise<number>,
     parser: Transform,
-    { validation = 'ok', timeout = 5000 }: ExecutionOptions
-) {
+    {
+        validation = defaultValidationPredicate,
+        timeout = 5000
+    }: ExecutionOptions
+): Promise<CommandResult> {
     return new Promise((resolve, reject) => {
-        let lastData = '';
+        const lastData: string[] = [];
         function parserListener(data: Buffer) {
-            lastData = data.toString('utf8');
-            if (lastData.toLowerCase().startsWith(validation)) {
+            lastData.push(data.toString('utf8'));
+            if (validation(lastData)) {
                 clearTimeout(timeoutId);
                 parser.removeListener('data', parserListener);
                 return void resolve({ data: lastData, command: commandName });
@@ -37,6 +47,10 @@ export function buildCommandRunner(serialPort: ATSerialPort) {
         await serialPort.close();
     }
 
+    async function isOpen() {
+        return serialPort.isOpen();
+    }
+
     async function runCommand(cmd: string, options: ExecutionOptions = {}) {
         const command = async () => {
             return await serialPort.write(cmd + '\r\n');
@@ -52,6 +66,7 @@ export function buildCommandRunner(serialPort: ATSerialPort) {
     return {
         open,
         close,
+        isOpen,
         runCommand
     };
 }
