@@ -3,7 +3,7 @@ import { CommandRunnerBuilderMock } from '@/mocks';
 
 const serialPath = '/dev/tty.usbmodem214301';
 
-describe.skip('command-runner', () => {
+describe('command-runner', () => {
     it('should return a list of SerialPorts', async () => {
         const list = await CommandRunnerBuilder.getSerialPortList();
         expect(list).toEqual(
@@ -196,7 +196,7 @@ describe('command-runner Mock', () => {
     it('should run a command and get response', async () => {
         const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
         const runner = CommandRunnerBuilderMock.buildCommandRunner(port);
-        CommandRunnerBuilderMock.mockReadFromSerialPort('OK V3.0.0.14.H');
+        CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
         try {
             await runner.open();
             const response = await runner.runCommand('at+version');
@@ -232,7 +232,7 @@ describe('command-runner Mock', () => {
         expect.assertions(3);
         const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
         const runner = CommandRunnerBuilderMock.buildCommandRunner(port);
-        CommandRunnerBuilderMock.mockReadFromSerialPort('OK V3.0.0.14.H');
+        CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
 
         try {
             await runner.open();

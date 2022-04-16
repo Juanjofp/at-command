@@ -60,7 +60,6 @@ export function buildRak811(
                     timeout: commandTimeout
                 }
             );
-            console.log(response.data);
             return parseInformation(response.data);
         } finally {
             await runner.close();

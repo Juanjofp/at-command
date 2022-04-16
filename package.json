@@ -17,6 +17,7 @@
         "test:coverage": "jest --watchAll --coverage",
         "test:debug": "node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand --watch",
         "test:ci": "jest --collect-coverage",
+        "test:rpi": "jest --runInBand --watch",
         "publish-code-coverage": "codecov",
         "validate": "npm run format && npm run formatTest && npm run lint && npm run test:ci && npm run build",
         "prepare": "husky install",
