@@ -92,10 +92,23 @@ export function buildRak811(
             await runner.close();
         }
     }
+
+    async function setAppEui(appEui: string) {
+        try {
+            await runner.open();
+            await runner.runCommand(`at+set_config=lora:app_eui:${appEui}`, {
+                timeout: commandTimeout,
+                validation: validateSetCommand
+            });
+        } finally {
+            await runner.close();
+        }
+    }
     return {
         getVersion,
         getInformation,
-        setDeviceEui
+        setDeviceEui,
+        setAppEui
     };
 }
 

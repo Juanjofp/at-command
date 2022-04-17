@@ -38,7 +38,9 @@ describe('Sigfox rak811', () => {
     });
 
     it('should set a invalid device EUI', async () => {
+        expect.assertions(2);
         const devEui = 'AC1F09FFFE04891A';
+
         try {
             await rak811.setDeviceEui('invalid');
         } catch (error) {
@@ -54,9 +56,35 @@ describe('Sigfox rak811', () => {
 
     it('should set a valid device EUI', async () => {
         const devEui = 'AC1F09FFFE04891A';
+
         await rak811.setDeviceEui(devEui);
         const info = await rak811.getInformation();
+
         expect(info.devEui).toEqual(devEui);
+    });
+
+    it('should set a invalid APP EUI', async () => {
+        expect.assertions(2);
+        const appEui = 'AC1F09FFF8680811';
+
+        try {
+            await rak811.setAppEui('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 2: Invalid parameter in the AT command`
+                );
+                const info = await rak811.getInformation();
+                expect(info.appEui).toEqual(appEui);
+            }
+        }
+    });
+
+    it('should set a valid APP EUI', async () => {
+        const appEui = 'AC1F09FFF8680811';
+        await rak811.setAppEui(appEui);
+        const info = await rak811.getInformation();
+        expect(info.appEui).toEqual(appEui);
     });
 });
 
@@ -163,6 +191,7 @@ describe('Mock Sigfox rak811', () => {
     });
 
     it('should set a invalid device EUI', async () => {
+        expect.assertions(3);
         const devEui = 'AC1F09FFFE04891A';
         CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['Error: 2']);
         CommandRunnerBuilderMock.mockReadFromSerialPort(infoData);
@@ -185,6 +214,7 @@ describe('Mock Sigfox rak811', () => {
     });
 
     it('should manage unknown error responses', async () => {
+        expect.assertions(1);
         CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['Error: 999']);
 
         try {
@@ -199,6 +229,7 @@ describe('Mock Sigfox rak811', () => {
     });
 
     it('should manage unknown responses', async () => {
+        expect.assertions(1);
         CommandRunnerBuilderMock.mockReadFromSerialPortOnce([
             'unknown response'
         ]);
@@ -206,11 +237,40 @@ describe('Mock Sigfox rak811', () => {
         try {
             await rak811.setDeviceEui('invalid');
         } catch (error) {
-            if (error instanceof LoraResponseError) {
+            if (error instanceof Error) {
                 expect(error.message).toBe(
-                    `Lora error code 999: Unknown error code`
+                    `Timeout error: 1 lines received for command: at+set_config=lora:dev_eui:invalid`
                 );
             }
         }
+    });
+
+    it('should set a invalid APP EUI', async () => {
+        expect.assertions(2);
+        const appEui = 'AC1F09FFF8680811';
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['Error: 2']);
+        CommandRunnerBuilderMock.mockReadFromSerialPort(infoData);
+
+        try {
+            await rak811.setAppEui('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 2: Invalid parameter in the AT command`
+                );
+                const info = await rak811.getInformation();
+                expect(info.appEui).toEqual(appEui);
+            }
+        }
+    });
+
+    it('should set a valid APP EUI', async () => {
+        const appEui = 'AC1F09FFF8680811';
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK']);
+        CommandRunnerBuilderMock.mockReadFromSerialPort(infoData);
+
+        await rak811.setAppEui(appEui);
+        const info = await rak811.getInformation();
+        expect(info.appEui).toEqual(appEui);
     });
 });
