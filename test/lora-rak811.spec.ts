@@ -82,9 +82,37 @@ describe('Sigfox rak811', () => {
 
     it('should set a valid APP EUI', async () => {
         const appEui = 'AC1F09FFF8680811';
+
         await rak811.setAppEui(appEui);
+
         const info = await rak811.getInformation();
         expect(info.appEui).toEqual(appEui);
+    });
+
+    it('should set a invalid App Key', async () => {
+        expect.assertions(2);
+        const appKey = 'AC1F09FFFE04891AAC1F09FFF8680811';
+
+        try {
+            await rak811.setAppKey('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 2: Invalid parameter in the AT command`
+                );
+                const info = await rak811.getInformation();
+                expect(info.appKey).toEqual(appKey);
+            }
+        }
+    });
+
+    it('should set a valid APP EUI', async () => {
+        const appKey = 'AC1F09FFFE04891AAC1F09FFF8680811';
+
+        await rak811.setAppKey(appKey);
+
+        const info = await rak811.getInformation();
+        expect(info.appKey).toEqual(appKey);
     });
 });
 
@@ -272,5 +300,35 @@ describe('Mock Sigfox rak811', () => {
         await rak811.setAppEui(appEui);
         const info = await rak811.getInformation();
         expect(info.appEui).toEqual(appEui);
+    });
+
+    it('should set a invalid App Key', async () => {
+        expect.assertions(2);
+        const appKey = 'AC1F09FFFE04891AAC1F09FFF8680811';
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['Error: 2']);
+        CommandRunnerBuilderMock.mockReadFromSerialPort(infoData);
+
+        try {
+            await rak811.setAppKey('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 2: Invalid parameter in the AT command`
+                );
+                const info = await rak811.getInformation();
+                expect(info.appKey).toEqual(appKey);
+            }
+        }
+    });
+
+    it('should set a valid APP EUI', async () => {
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK']);
+        CommandRunnerBuilderMock.mockReadFromSerialPort(infoData);
+        const appKey = 'AC1F09FFFE04891AAC1F09FFF8680811';
+
+        await rak811.setAppKey(appKey);
+
+        const info = await rak811.getInformation();
+        expect(info.appKey).toEqual(appKey);
     });
 });
