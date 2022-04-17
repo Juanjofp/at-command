@@ -7,6 +7,7 @@ import {
 import { Transform } from 'stream';
 
 function defaultValidationPredicate(result: string[]): boolean {
+    console.log(result);
     return result.some(line => line.toLowerCase().startsWith('ok'));
 }
 async function executeCommandAndParseResponse(
@@ -22,10 +23,21 @@ async function executeCommandAndParseResponse(
         const lastData: string[] = [];
         function parserListener(data: Buffer) {
             lastData.push(data.toString('utf8'));
-            if (validation(lastData)) {
+            try {
+                if (validation(lastData)) {
+                    clearTimeout(timeoutId);
+                    parser.removeListener('data', parserListener);
+                    parser.removeListener('error', reject);
+                    return void resolve({
+                        data: lastData,
+                        command: commandName
+                    });
+                }
+            } catch (error) {
                 clearTimeout(timeoutId);
                 parser.removeListener('data', parserListener);
-                return void resolve({ data: lastData, command: commandName });
+                parser.removeListener('error', reject);
+                return void reject(error);
             }
         }
         parser.on('error', reject);
@@ -47,10 +59,6 @@ export function buildCommandRunner(serialPort: ATSerialPort) {
         await serialPort.close();
     }
 
-    async function isOpen() {
-        return serialPort.isOpen();
-    }
-
     async function runCommand(cmd: string, options: ExecutionOptions = {}) {
         const command = async () => {
             return await serialPort.write(cmd + '\r\n');
@@ -66,7 +74,6 @@ export function buildCommandRunner(serialPort: ATSerialPort) {
     return {
         open,
         close,
-        isOpen,
         runCommand
     };
 }

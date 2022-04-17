@@ -12,6 +12,7 @@ export type CommandRunnerBuilderMock = {
     mockGetSerialPortList(list: SerialPortInfo[]): void;
     mockCreateSerialPortThrowError(error: Error): void;
     mockReadFromSerialPort(data: string[]): void;
+    mockReadFromSerialPortOnce(data: string[]): void;
 } & CommandRunnerBuilder;
 
 let serialPortList: SerialPortInfo[] = [];
@@ -48,12 +49,21 @@ let mockResponse: string[] = [];
 function mockReadFromSerialPort(data: string[]) {
     mockResponse = data;
 }
-async function write(data: WriteValues) {
-    mockResponse.forEach((line, index) => {
+
+const mockResponseOnce: string[][] = [];
+function mockReadFromSerialPortOnce(data: string[]) {
+    mockResponseOnce.push(data);
+}
+function sendDataToSerialPort() {
+    const mockResponseData = mockResponseOnce.shift() || mockResponse;
+    mockResponseData.forEach((line, index) => {
         setTimeout(() => {
             mockTransform.write(line);
         }, 100 * index);
     });
+}
+async function write(data: WriteValues) {
+    sendDataToSerialPort();
     return Promise.resolve(data.length);
 }
 
@@ -76,6 +86,7 @@ export const CommandRunnerBuilderMock: CommandRunnerBuilderMock = {
     mockGetSerialPortList,
     mockCreateSerialPortThrowError,
     mockReadFromSerialPort,
+    mockReadFromSerialPortOnce,
     getSerialPortList: () => Promise.resolve(serialPortList),
     buildSerialPort,
     buildCommandRunner

@@ -3,6 +3,7 @@ import {
     CommandRunnerBuilder,
     CommandRunner
 } from '@/command-runner';
+import { LoraResponseError } from '@/lora/models';
 
 export type LoraDeps = {
     runner?: CommandRunner;
@@ -65,9 +66,36 @@ export function buildRak811(
             await runner.close();
         }
     }
+
+    function validateSetCommand(data: string[]) {
+        if (data.length > 0) {
+            const response = data[data.length - 1];
+            if (response.toLowerCase().startsWith('ok')) {
+                return true;
+            }
+            if (response.toLowerCase().startsWith('error')) {
+                const errorCode = trimValue(response);
+                throw new LoraResponseError(errorCode);
+            }
+        }
+        return false;
+    }
+
+    async function setDeviceEui(devEui: string) {
+        try {
+            await runner.open();
+            await runner.runCommand(`at+set_config=lora:dev_eui:${devEui}`, {
+                timeout: commandTimeout,
+                validation: validateSetCommand
+            });
+        } finally {
+            await runner.close();
+        }
+    }
     return {
         getVersion,
-        getInformation
+        getInformation,
+        setDeviceEui
     };
 }
 
