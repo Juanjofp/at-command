@@ -7,6 +7,7 @@ import {
 import { CommandRunnerBuilderMock } from '@/mocks';
 
 const serialPath = '/dev/tty.usbmodem214301';
+jest.setTimeout(30000);
 
 describe('Sigfox rak811', () => {
     let rak811: Rak811.SigfoxRak811;
@@ -34,7 +35,8 @@ describe('Sigfox rak811', () => {
         expect(info.appEui).toEqual('AC1F09FFF8680811');
         expect(info.appKey).toEqual('AC1F09FFFE04891AAC1F09FFF8680811');
         expect(info.classType).toEqual('A');
-        expect(info.isJoined).toBe(false);
+        expect(info.isConfirm).toEqual(false);
+        expect(info.isJoined).toBe(true);
     });
 
     it('should set a invalid device EUI', async () => {
@@ -114,9 +116,15 @@ describe('Sigfox rak811', () => {
         const info = await rak811.getInformation();
         expect(info.appKey).toEqual(appKey);
     });
+
+    it.only('should send a frame to gateway', async () => {
+        const response = await rak811.sendData();
+
+        expect(response).toEqual('');
+    });
 });
 
-describe('Mock Sigfox rak811', () => {
+describe.skip('Mock Sigfox rak811', () => {
     let rak811: Rak811.SigfoxRak811;
     let atPort: ATSerialPort;
 
@@ -189,6 +197,7 @@ describe('Mock Sigfox rak811', () => {
         expect(info.appEui).toEqual('AC1F09FFF8680811');
         expect(info.appKey).toEqual('AC1F09FFFE04891AAC1F09FFF8680811');
         expect(info.classType).toEqual('A');
+        expect(info.isConfirm).toEqual(false);
         expect(info.isJoined).toBe(false);
     });
 
@@ -330,5 +339,13 @@ describe('Mock Sigfox rak811', () => {
 
         const info = await rak811.getInformation();
         expect(info.appKey).toEqual(appKey);
+    });
+
+    it.skip('should join send a frame to gateway', async () => {
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData);
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK']);
+        const response = await rak811.sendData();
+
+        expect(response).toEqual('');
     });
 });

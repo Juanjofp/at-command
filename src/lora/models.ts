@@ -1,5 +1,7 @@
 const ErrorCodes: Record<string, string> = {
-    '2': 'Invalid parameter in the AT command'
+    '1': 'The last command received is an unsupported AT command',
+    '2': 'Invalid parameter in the AT command',
+    '99': 'Failed to join into a LoRa network'
 };
 export class LoraResponseError extends Error {
     private readonly errorCode: number;

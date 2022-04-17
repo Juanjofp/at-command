@@ -10,7 +10,7 @@ function defaultValidationPredicate(result: string[]): boolean {
     console.log(result);
     return result.some(line => line.toLowerCase().startsWith('ok'));
 }
-async function executeCommandAndParseResponse(
+async function executeCommandAndWaitResponse(
     commandName: string,
     command: () => Promise<number>,
     parser: Transform,
@@ -59,11 +59,11 @@ export function buildCommandRunner(serialPort: ATSerialPort) {
         await serialPort.close();
     }
 
-    async function runCommand(cmd: string, options: ExecutionOptions = {}) {
+    async function executeCommand(cmd: string, options: ExecutionOptions = {}) {
         const command = async () => {
             return await serialPort.write(cmd + '\r\n');
         };
-        return await executeCommandAndParseResponse(
+        return await executeCommandAndWaitResponse(
             cmd,
             command,
             serialPort.read(),
@@ -71,10 +71,36 @@ export function buildCommandRunner(serialPort: ATSerialPort) {
         );
     }
 
+    async function runCommand(commandFunction: () => Promise<CommandResult>) {
+        try {
+            await open();
+            return await commandFunction();
+        } finally {
+            await close();
+        }
+    }
+
+    async function runCommands(
+        commandFunctions: (() => Promise<CommandResult>)[]
+    ) {
+        try {
+            await open();
+            const responses: CommandResult[] = [];
+            for (const commandFunction of commandFunctions) {
+                responses.push(await commandFunction());
+            }
+            return responses;
+        } finally {
+            await close();
+        }
+    }
+
     return {
         open,
         close,
-        runCommand
+        executeCommand,
+        runCommand,
+        runCommands
     };
 }
 export type CommandRunner = ReturnType<typeof buildCommandRunner>;

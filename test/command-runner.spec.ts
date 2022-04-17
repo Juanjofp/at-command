@@ -78,7 +78,7 @@ describe.skip('command-runner', () => {
 
         try {
             await runner.open();
-            const response = await runner.runCommand('at+version');
+            const response = await runner.executeCommand('at+version');
             expect(response).toEqual({
                 data: ['OK V3.0.0.14.H'],
                 command: 'at+version'
@@ -97,7 +97,7 @@ describe.skip('command-runner', () => {
 
         try {
             await runner.open();
-            await runner.runCommand('at+version', { timeout: 3000 });
+            await runner.executeCommand('at+version', { timeout: 3000 });
         } catch (error) {
             if (error instanceof Error) {
                 expect(error.message).toBe(
@@ -116,7 +116,7 @@ describe.skip('command-runner', () => {
 
         try {
             await runner.open();
-            await runner.runCommand('at+version', {
+            await runner.executeCommand('at+version', {
                 timeout: 1000,
                 validation: () => false
             });
@@ -132,9 +132,51 @@ describe.skip('command-runner', () => {
             await runner.close();
         }
     });
+
+    it('should run a set of commands and get responses', async () => {
+        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+
+        const responses = await runner.runCommands([
+            () => runner.executeCommand('at+version'),
+            () => runner.executeCommand('at+version')
+        ]);
+
+        expect(responses).toEqual([
+            {
+                data: ['OK V3.0.0.14.H'],
+                command: 'at+version'
+            },
+            {
+                data: ['OK V3.0.0.14.H'],
+                command: 'at+version'
+            }
+        ]);
+    });
+
+    it('should run a complex command and get response', async () => {
+        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+
+        const complexCommand = async function () {
+            const resp1 = await runner.executeCommand('at+version');
+            const resp2 = await runner.executeCommand('at+version');
+            return {
+                data: [resp1.data[0], resp2.data[0]],
+                command: 'at+version'
+            };
+        };
+
+        const response = await runner.runCommand(complexCommand);
+
+        expect(response).toEqual({
+            command: 'at+version',
+            data: ['OK V3.0.0.14.H', 'OK V3.0.0.14.H']
+        });
+    });
 });
 
-describe('command-runner Mock', () => {
+describe.skip('command-runner Mock', () => {
     beforeEach(() => {
         CommandRunnerBuilderMock.mockClear();
     });
@@ -199,7 +241,7 @@ describe('command-runner Mock', () => {
         CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
         try {
             await runner.open();
-            const response = await runner.runCommand('at+version');
+            const response = await runner.executeCommand('at+version');
             expect(response).toEqual({
                 data: ['OK V3.0.0.14.H'],
                 command: 'at+version'
@@ -216,7 +258,7 @@ describe('command-runner Mock', () => {
 
         try {
             await runner.open();
-            await runner.runCommand('at+version', { timeout: 3000 });
+            await runner.executeCommand('at+version', { timeout: 3000 });
         } catch (error) {
             if (error instanceof Error) {
                 expect(error.message).toBe(
@@ -236,7 +278,7 @@ describe('command-runner Mock', () => {
 
         try {
             await runner.open();
-            await runner.runCommand('at+version', {
+            await runner.executeCommand('at+version', {
                 timeout: 1000,
                 validation: () => false
             });
@@ -251,5 +293,68 @@ describe('command-runner Mock', () => {
         } finally {
             await runner.close();
         }
+    });
+
+    it('should run a set of commands and get responses', async () => {
+        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+        CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
+
+        const responses = await runner.runCommands([
+            () => runner.executeCommand('at+version'),
+            () => runner.executeCommand('at+version')
+        ]);
+
+        expect(responses).toEqual([
+            {
+                data: ['OK V3.0.0.14.H'],
+                command: 'at+version'
+            },
+            {
+                data: ['OK V3.0.0.14.H'],
+                command: 'at+version'
+            }
+        ]);
+    });
+
+    it('should run a set of commands and catch errors', async () => {
+        expect.assertions(1);
+        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+        CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
+
+        try {
+            await runner.runCommands([
+                () => runner.executeCommand('at+version'),
+                async () => {
+                    throw new Error(`Error in middle of commands`);
+                },
+                () => runner.executeCommand('at+version')
+            ]);
+        } catch (error) {
+            expect(error).toEqual(new Error(`Error in middle of commands`));
+        }
+    });
+
+    it('should run a complex command and get response', async () => {
+        CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
+        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+
+        const complexCommand = async function () {
+            const resp1 = await runner.executeCommand('at+version');
+            const resp2 = await runner.executeCommand('at+version');
+            return {
+                data: [resp1.data[0], resp2.data[0]],
+                command: 'at+version'
+            };
+        };
+
+        const response = await runner.runCommand(complexCommand);
+
+        expect(response).toEqual({
+            command: 'at+version',
+            data: ['OK V3.0.0.14.H', 'OK V3.0.0.14.H']
+        });
     });
 });

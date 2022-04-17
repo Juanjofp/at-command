@@ -17,15 +17,12 @@ export function buildRak811(
     }: LoraDeps = {}
 ) {
     async function getVersion() {
-        try {
-            await runner.open();
-            const response = await runner.runCommand('at+version', {
+        const command = () =>
+            runner.executeCommand('at+version', {
                 timeout: commandTimeout
             });
-            return response.data[0].split(' ')[1];
-        } finally {
-            await runner.close();
-        }
+        const response = await runner.runCommand(command);
+        return response.data[0].split(' ')[1];
     }
 
     function trimValue(line: string) {
@@ -38,6 +35,8 @@ export function buildRak811(
         const appEui = trimValue(data[7]);
         const appKey = trimValue(data[8]);
         const classType = trimValue(data[9]);
+        const isConfirmValue = trimValue(data[10]);
+        const isConfirm = isConfirmValue === 'unconfirm';
         const isJoinedValue = trimValue(data[10]);
         const isJoined = isJoinedValue === 'true';
 
@@ -48,26 +47,22 @@ export function buildRak811(
             appEui,
             appKey,
             classType,
-            isJoined
+            isJoined,
+            isConfirm
         };
     }
+    async function runInformationCommand() {
+        return runner.executeCommand('at+get_config=lora:status', {
+            validation: data => data.length === 25,
+            timeout: commandTimeout
+        });
+    }
     async function getInformation() {
-        try {
-            await runner.open();
-            const response = await runner.runCommand(
-                'at+get_config=lora:status',
-                {
-                    validation: data => data.length === 25,
-                    timeout: commandTimeout
-                }
-            );
-            return parseInformation(response.data);
-        } finally {
-            await runner.close();
-        }
+        const response = await runner.runCommand(runInformationCommand);
+        return parseInformation(response.data);
     }
 
-    function validateSetCommand(data: string[]) {
+    function validateCommand(data: string[]) {
         if (data.length > 0) {
             const response = data[data.length - 1];
             if (response.toLowerCase().startsWith('ok')) {
@@ -81,47 +76,77 @@ export function buildRak811(
         return false;
     }
 
+    async function runSetDeviceEui(devEui: string) {
+        return runner.executeCommand(`at+set_config=lora:dev_eui:${devEui}`, {
+            timeout: commandTimeout,
+            validation: validateCommand
+        });
+    }
     async function setDeviceEui(devEui: string) {
-        try {
-            await runner.open();
-            await runner.runCommand(`at+set_config=lora:dev_eui:${devEui}`, {
-                timeout: commandTimeout,
-                validation: validateSetCommand
-            });
-        } finally {
-            await runner.close();
-        }
+        await runner.runCommand(() => runSetDeviceEui(devEui));
     }
 
+    async function runSetAppEui(appEui: string) {
+        return runner.executeCommand(`at+set_config=lora:app_eui:${appEui}`, {
+            timeout: commandTimeout,
+            validation: validateCommand
+        });
+    }
     async function setAppEui(appEui: string) {
-        try {
-            await runner.open();
-            await runner.runCommand(`at+set_config=lora:app_eui:${appEui}`, {
-                timeout: commandTimeout,
-                validation: validateSetCommand
-            });
-        } finally {
-            await runner.close();
-        }
+        await runner.runCommand(() => runSetAppEui(appEui));
     }
 
-    async function setAppKey(appKey: string) {
-        try {
-            await runner.open();
-            await runner.runCommand(`at+set_config=lora:app_key:${appKey}`, {
-                timeout: commandTimeout,
-                validation: validateSetCommand
-            });
-        } finally {
-            await runner.close();
-        }
+    async function runSetAppKey(appKey: string) {
+        return runner.executeCommand(`at+set_config=lora:app_key:${appKey}`, {
+            timeout: commandTimeout,
+            validation: validateCommand
+        });
     }
+    async function setAppKey(appKey: string) {
+        await runner.runCommand(() => runSetAppKey(appKey));
+    }
+
+    async function runJoinCommand() {
+        return runner.executeCommand('at+join', {
+            timeout: 10000,
+            validation: validateCommand
+        });
+    }
+    async function join() {
+        await runner.runCommand(runJoinCommand);
+    }
+
+    async function runSendData() {
+        return await runner.executeCommand('at+send=lora:1:0102030405060708', {
+            timeout: 10000
+        });
+    }
+    async function sendData() {
+        await runner.runCommand(async () => {
+            const infoResponse = await runInformationCommand();
+            console.log(infoResponse);
+            const info = parseInformation(infoResponse.data);
+            console.log(info);
+            if (!info.isJoined) {
+                await runJoinCommand();
+            }
+            // Check confirmation
+            if (!info.isConfirm) {
+                // await runSetConfirm(true);
+                console.log('Confirmation is not enabled');
+            }
+            return await runSendData();
+        });
+    }
+
     return {
         getVersion,
         getInformation,
         setDeviceEui,
         setAppEui,
-        setAppKey
+        setAppKey,
+        join,
+        sendData
     };
 }
 
