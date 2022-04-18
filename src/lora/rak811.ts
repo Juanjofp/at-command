@@ -147,7 +147,7 @@ export function buildRak811(
         validation: (data: string[]) => boolean,
         timeout: number
     ) {
-        return await runner.executeCommand(`at+send=lora:1:${data}`, {
+        return await runner.executeCommand(`at+send=lora:2:${data}`, {
             timeout,
             validation
         });

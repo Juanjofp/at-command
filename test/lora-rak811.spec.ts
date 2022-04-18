@@ -135,7 +135,7 @@ describe('LoRa rak811', () => {
     });
 
     it('should send an unconfirmed frame to gateway', async () => {
-        await rak811.sendUnconfirmedData('010203');
+        await rak811.sendUnconfirmedData('01020304');
     });
 
     it.skip('should send a confirmed frame to gateway', async () => {

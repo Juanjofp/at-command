@@ -3,7 +3,7 @@ import { CommandRunnerBuilderMock } from '@/mocks';
 
 const serialPath = '/dev/tty.usbmodem214301';
 
-describe.skip('command-runner', () => {
+describe('command-runner', () => {
     it('should return a list of SerialPorts', async () => {
         const list = await CommandRunnerBuilder.getSerialPortList();
         expect(list).toEqual(
