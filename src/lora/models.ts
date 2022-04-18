@@ -1,6 +1,7 @@
 const ErrorCodes: Record<string, string> = {
     '1': 'The last command received is an unsupported AT command',
     '2': 'Invalid parameter in the AT command',
+    '96': 'Time out reached while waiting for a packet in the LoRa RX2 window',
     '99': 'Failed to join into a LoRa network'
 };
 export class LoraResponseError extends Error {

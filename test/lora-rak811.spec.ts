@@ -7,9 +7,9 @@ import {
 import { CommandRunnerBuilderMock } from '@/mocks';
 
 const serialPath = '/dev/tty.usbmodem214301';
-jest.setTimeout(30000);
+jest.setTimeout(50000);
 
-describe('Sigfox rak811', () => {
+describe('LoRa rak811', () => {
     let rak811: Rak811.SigfoxRak811;
     beforeAll(async () => {
         const serialPort = await CommandRunnerBuilder.buildSerialPort(
@@ -117,14 +117,61 @@ describe('Sigfox rak811', () => {
         expect(info.appKey).toEqual(appKey);
     });
 
-    it.only('should send a frame to gateway', async () => {
-        const response = await rak811.sendData();
+    it('should join send a frame to gateway', async () => {
+        await rak811.join({ timeout: 10000 });
+    });
 
-        expect(response).toEqual('');
+    it('should change message confirmation', async () => {
+        const info = await rak811.getInformation();
+        const toggleConfirmation = !info.isConfirm;
+        await rak811.needsConfirmation(toggleConfirmation);
+
+        const infoChanged = await rak811.getInformation();
+        expect(infoChanged.isConfirm).toEqual(toggleConfirmation);
+
+        await rak811.needsConfirmation(false);
+        const restoredInfo = await rak811.getInformation();
+        expect(restoredInfo.isConfirm).toEqual(false);
+    });
+
+    it('should send an unconfirmed frame to gateway', async () => {
+        await rak811.sendUnconfirmedData('010203');
+    });
+
+    it.skip('should send a confirmed frame to gateway', async () => {
+        const response = await rak811.sendConfirmedData('010203');
+
+        expect(response.data).toEqual('');
+        expect(response.port).toEqual(0);
+        expect(response.rssi).toEqual(-128);
+        expect(response.snr).toEqual(0);
+    });
+
+    it.skip('should send an unconfirmed frame to gateway and receive response', async () => {
+        const response = await rak811.sendUnconfirmedDataAndWaitForResponse(
+            '03010204',
+            { timeout: 30000 }
+        );
+
+        expect(response.data).toEqual('');
+        expect(response.port).toEqual(0);
+        expect(response.rssi).toEqual(-128);
+        expect(response.snr).toEqual(0);
+    });
+
+    it.skip('should send a confirmed frame to gateway and receive response', async () => {
+        const response = await rak811.sendConfirmedDataAndWaitForResponse(
+            '202122'
+        );
+
+        expect(response.data).toEqual('');
+        expect(response.port).toEqual(0);
+        expect(response.rssi).toEqual(-128);
+        expect(response.snr).toEqual(0);
     });
 });
 
-describe.skip('Mock Sigfox rak811', () => {
+describe('Mock LoRa rak811', () => {
     let rak811: Rak811.SigfoxRak811;
     let atPort: ATSerialPort;
 
@@ -341,11 +388,151 @@ describe.skip('Mock Sigfox rak811', () => {
         expect(info.appKey).toEqual(appKey);
     });
 
-    it.skip('should join send a frame to gateway', async () => {
+    it('should join successfully', async () => {
         CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData);
-        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK']);
-        const response = await rak811.sendData();
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce([
+            'OK Join Success'
+        ]);
 
-        expect(response).toEqual('');
+        await rak811.join();
+    });
+
+    it('should join twice successfully', async () => {
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData);
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce([
+            'OK Join Success'
+        ]);
+        const joinedState = infoData.slice();
+        joinedState[10] = 'Joined Network:true';
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(joinedState);
+
+        await rak811.join();
+        await rak811.join();
+    });
+
+    it('should fail when join fails', async () => {
+        expect.assertions(1);
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData);
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['Error: 99']);
+
+        try {
+            await rak811.join();
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 99: Failed to join into a LoRa network`
+                );
+            }
+        }
+    });
+
+    it('should change message confirmation', async () => {
+        const modifiedInfoData = infoData.slice();
+        modifiedInfoData[11] = 'IsConfirm: confirm';
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK']);
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(modifiedInfoData);
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK']);
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData);
+
+        await rak811.needsConfirmation(true);
+
+        const info = await rak811.getInformation();
+        expect(info.isConfirm).toEqual(true);
+
+        await rak811.needsConfirmation(false);
+
+        const infoRestored = await rak811.getInformation();
+        expect(infoRestored.isConfirm).toEqual(false);
+    });
+
+    it('should send an unconfirmed frame to gateway', async () => {
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData); // info
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData); // join check status
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK ']); // join
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK ']); // send data
+
+        await rak811.sendUnconfirmedData('0102030405060708');
+    });
+
+    it('should send a confirmed frame to gateway', async () => {
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData); // info
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData); // join check status
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK ']); // join
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK ']); // confirmed
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce([
+            'OK ',
+            'at+recv=1,-50,7,0'
+        ]);
+
+        const response = await rak811.sendConfirmedData('01020304', {
+            timeout: 500
+        });
+
+        expect(response.data).toEqual(undefined);
+        expect(response.dataSize).toEqual(0);
+        expect(response.port).toEqual(1);
+        expect(response.rssi).toEqual(-50);
+        expect(response.snr).toEqual(7);
+    });
+
+    it('should fails to send a confirmed frame to gateway', async () => {
+        expect.assertions(1);
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData); // info
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData); // join check status
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK ']); // join
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK ']); // confirmed
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['ERROR: 96']);
+        // Response send data [ 'ERROR: 96' ]
+
+        try {
+            await rak811.sendConfirmedData('0102030405060708');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 96: Time out reached while waiting for a packet in the LoRa RX2 window`
+                );
+            }
+        }
+    });
+
+    it('should send an unconfirmed frame to gateway and receive response', async () => {
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData); // info
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData); // join check status
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK ']); // join
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce([
+            'OK ',
+            'at+recv=1,-50,7,3:030405'
+        ]);
+
+        const response = await rak811.sendUnconfirmedDataAndWaitForResponse(
+            '0102030405060708'
+        );
+
+        expect(response.data).toEqual('030405');
+        expect(response.dataSize).toEqual(3);
+        expect(response.port).toEqual(1);
+        expect(response.rssi).toEqual(-50);
+        expect(response.snr).toEqual(7);
+    });
+
+    it('should send an confirmed frame to gateway and receive response', async () => {
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData); // info
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData); // join check status
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK ']); // join
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK ']); // confirmed
+        CommandRunnerBuilderMock.mockReadFromSerialPortOnce([
+            'OK ',
+            'at+recv=1,-50,7,4:03040509'
+        ]);
+
+        const response = await rak811.sendConfirmedDataAndWaitForResponse(
+            '0102030405060708'
+        );
+
+        expect(response.data).toEqual('03040509');
+        expect(response.dataSize).toEqual(4);
+        expect(response.port).toEqual(1);
+        expect(response.rssi).toEqual(-50);
+        expect(response.snr).toEqual(7);
     });
 });

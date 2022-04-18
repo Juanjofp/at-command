@@ -59,7 +59,7 @@ function sendDataToSerialPort() {
     mockResponseData.forEach((line, index) => {
         setTimeout(() => {
             mockTransform.write(line);
-        }, 100 * index);
+        }, 10 * index);
     });
 }
 async function write(data: WriteValues) {

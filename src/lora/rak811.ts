@@ -1,7 +1,8 @@
 import {
     ATSerialPort,
     CommandRunnerBuilder,
-    CommandRunner
+    CommandRunner,
+    CommandResult
 } from '@/command-runner';
 import { LoraResponseError } from '@/lora/models';
 
@@ -35,11 +36,10 @@ export function buildRak811(
         const appEui = trimValue(data[7]);
         const appKey = trimValue(data[8]);
         const classType = trimValue(data[9]);
-        const isConfirmValue = trimValue(data[10]);
-        const isConfirm = isConfirmValue === 'unconfirm';
         const isJoinedValue = trimValue(data[10]);
         const isJoined = isJoinedValue === 'true';
-
+        const isConfirmValue = trimValue(data[11]);
+        const isConfirm = isConfirmValue !== 'unconfirm';
         return {
             region,
             joinMode,
@@ -62,15 +62,21 @@ export function buildRak811(
         return parseInformation(response.data);
     }
 
-    function validateCommand(data: string[]) {
-        if (data.length > 0) {
-            const response = data[data.length - 1];
-            if (response.toLowerCase().startsWith('ok')) {
-                return true;
-            }
+    function validateOrThrowError(data: string[]) {
+        data.forEach(response => {
             if (response.toLowerCase().startsWith('error')) {
                 const errorCode = trimValue(response);
                 throw new LoraResponseError(errorCode);
+            }
+        });
+    }
+    function validateCommand(data: string[]) {
+        if (data.length > 0) {
+            validateOrThrowError(data);
+            for (const response of data) {
+                if (response.toLowerCase().startsWith('ok')) {
+                    return true;
+                }
             }
         }
         return false;
@@ -106,36 +112,135 @@ export function buildRak811(
         await runner.runCommand(() => runSetAppKey(appKey));
     }
 
-    async function runJoinCommand() {
+    async function runJoinCommand(timeout: number): Promise<CommandResult> {
+        const infoResponse = await runInformationCommand();
+        const info = parseInformation(infoResponse.data);
+        if (info.isJoined) {
+            return {
+                data: ['Ok Join Success'],
+                command: 'at+join'
+            };
+        }
         return runner.executeCommand('at+join', {
-            timeout: 10000,
+            timeout,
             validation: validateCommand
         });
     }
-    async function join() {
-        await runner.runCommand(runJoinCommand);
+    async function join({ timeout = 10000 } = {}) {
+        await runner.runCommand(() => runJoinCommand(timeout));
     }
 
-    async function runSendData() {
-        return await runner.executeCommand('at+send=lora:1:0102030405060708', {
-            timeout: 10000
+    async function runConfirmCommand(confirmation: boolean) {
+        return runner.executeCommand(
+            `at+set_config=lora:confirm:${confirmation ? 1 : 0}`,
+            {
+                validation: validateCommand
+            }
+        );
+    }
+    async function needsConfirmation(confirmation: boolean) {
+        await runner.runCommand(() => runConfirmCommand(confirmation));
+    }
+
+    async function runSendData(
+        data: string,
+        validation: (data: string[]) => boolean,
+        timeout: number
+    ) {
+        return await runner.executeCommand(`at+send=lora:1:${data}`, {
+            timeout,
+            validation
         });
     }
-    async function sendData() {
-        await runner.runCommand(async () => {
+
+    async function sendData(
+        data: string,
+        {
+            confirmed = false,
+            timeout,
+            validation = validateCommand
+        }: {
+            confirmed?: boolean;
+            validation?: (data: string[]) => boolean;
+            timeout: number;
+        }
+    ) {
+        return await runner.runCommand(async () => {
             const infoResponse = await runInformationCommand();
-            console.log(infoResponse);
             const info = parseInformation(infoResponse.data);
-            console.log(info);
             if (!info.isJoined) {
-                await runJoinCommand();
+                await runJoinCommand(10000);
             }
-            // Check confirmation
-            if (!info.isConfirm) {
-                // await runSetConfirm(true);
-                console.log('Confirmation is not enabled');
+            if (info.isConfirm !== confirmed) {
+                await runConfirmCommand(confirmed);
             }
-            return await runSendData();
+            return await runSendData(data, validation, timeout);
+        });
+    }
+
+    async function sendUnconfirmedData(data: string, { timeout = 10000 } = {}) {
+        await sendData(data, { timeout });
+    }
+
+    function waitForReceivedValidation(data: string[]) {
+        validateOrThrowError(data);
+        if (data.length >= 2) {
+            const [result, message] = data;
+            if (
+                result.toLowerCase().startsWith('ok') &&
+                message.toLowerCase().startsWith('at+recv=')
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+    function parseDataReceived(data: string) {
+        const [, message] = data.split('=');
+        const [status, response] = message.split(':');
+        const [port, rssi, snr, dataSize] = status.split(',');
+        return {
+            status: parseInt(status),
+            port: parseInt(port),
+            rssi: parseInt(rssi),
+            snr: parseInt(snr),
+            dataSize: parseInt(dataSize),
+            data: response
+        };
+    }
+    async function sendDataAndWaitResponse(
+        data: string,
+        { timeout, confirmed = false }: { timeout: number; confirmed?: boolean }
+    ) {
+        const response = await sendData(data, {
+            confirmed,
+            timeout,
+            validation: waitForReceivedValidation
+        });
+        return parseDataReceived(response.data[1]);
+    }
+
+    async function sendConfirmedData(data: string, { timeout = 6000 } = {}) {
+        return sendDataAndWaitResponse(data, {
+            timeout,
+            confirmed: true
+        });
+    }
+
+    async function sendUnconfirmedDataAndWaitForResponse(
+        data: string,
+        { timeout = 6000 } = {}
+    ) {
+        return sendDataAndWaitResponse(data, { timeout });
+    }
+
+    async function sendConfirmedDataAndWaitForResponse(
+        data: string,
+        { timeout = 10000 } = {}
+    ) {
+        return sendDataAndWaitResponse(data, {
+            timeout,
+            confirmed: true
         });
     }
 
@@ -146,7 +251,11 @@ export function buildRak811(
         setAppEui,
         setAppKey,
         join,
-        sendData
+        needsConfirmation,
+        sendUnconfirmedData,
+        sendConfirmedData,
+        sendUnconfirmedDataAndWaitForResponse,
+        sendConfirmedDataAndWaitForResponse
     };
 }
 

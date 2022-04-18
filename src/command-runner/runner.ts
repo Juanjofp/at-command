@@ -7,7 +7,6 @@ import {
 import { Transform } from 'stream';
 
 function defaultValidationPredicate(result: string[]): boolean {
-    console.log(result);
     return result.some(line => line.toLowerCase().startsWith('ok'));
 }
 async function executeCommandAndWaitResponse(

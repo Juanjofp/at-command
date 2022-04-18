@@ -176,7 +176,7 @@ describe.skip('command-runner', () => {
     });
 });
 
-describe.skip('command-runner Mock', () => {
+describe('command-runner Mock', () => {
     beforeEach(() => {
         CommandRunnerBuilderMock.mockClear();
     });
