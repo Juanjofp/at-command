@@ -3,13 +3,13 @@ import {
     CommandRunnerBuilder,
     LoraResponseError,
     Rak811
-} from '@/main';
+} from '@/index';
 import { CommandRunnerBuilderMock } from '@/mocks';
 
 const serialPath = '/dev/tty.usbmodem214301';
 jest.setTimeout(50000);
 
-describe('LoRa rak811', () => {
+describe.skip('LoRa rak811', () => {
     let rak811: Rak811.SigfoxRak811;
     beforeAll(async () => {
         const serialPort = await CommandRunnerBuilder.buildSerialPort(

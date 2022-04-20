@@ -3,7 +3,7 @@ module.exports = {
     testEnvironment: 'jest-environment-node',
     coverageDirectory: './coverage/',
     collectCoverage: true,
-    collectCoverageFrom: ['src/**/*.ts', '!src/main.ts'],
+    collectCoverageFrom: ['src/**/*.ts', '!src/index.ts'],
     coverageThreshold: {
         global: {
             statements: 90,

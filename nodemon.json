@@ -3,9 +3,9 @@
         "node_modules"
     ],
     "watch": [
-        "dist/main.js",
+        "dist/index.js",
         "package-lock.json"
     ],
-    "exec": "node dist/main.js --inspect=0.0.0.0:9229",
+    "exec": "node dist/index.js --inspect=0.0.0.0:9229",
     "ext": "ts"
 }
