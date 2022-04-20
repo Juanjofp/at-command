@@ -4,7 +4,7 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
-    entry: { index: './src/index.ts' },
+    entry: { index: './src/index.ts', cli: './src/cli.ts' },
     devtool: 'inline-source-map',
     module: {
         rules: [
@@ -31,7 +31,7 @@ module.exports = {
         // },
     },
     output: {
-        filename: 'index.js',
+        filename: '[name].js',
         path: path.resolve(__dirname, 'dist'),
         clean: true,
         libraryTarget: 'commonjs2'

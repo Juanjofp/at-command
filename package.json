@@ -6,6 +6,8 @@
     "scripts": {
         "build": "webpack",
         "start": "node dist/index.js",
+        "start:cli": "node dist/cli.js",
+        "start:dev:cli": "npm run build && node dist/cli.js",
         "start:dev": "npm run build && node dist/index.js --inspect=0.0.0.0:9229",
         "start:watch": "concurrently --kill-others \"npm run start:watch:compile\" \"npm run start:watch:run\"",
         "start:watch:compile": "webpack --watch",
