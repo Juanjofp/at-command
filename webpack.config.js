@@ -2,6 +2,7 @@
 const path = require('path');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const nodeExternals = require('webpack-node-externals');
+const ShebangPlugin = require('webpack-shebang-plugin');
 
 module.exports = {
     entry: { index: './src/index.ts', cli: './src/cli.ts' },
@@ -22,6 +23,12 @@ module.exports = {
             }
         ]
     },
+    plugins: [
+        new ShebangPlugin({
+            header: '#!/usr/bin/env node',
+            entry: 'cli'
+        })
+    ],
     resolve: {
         extensions: ['.tsx', '.ts', '.js'],
         plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })]

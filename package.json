@@ -1,13 +1,17 @@
 {
-    "name": "at-command-serialport",
+    "name": "@juanjofp/at-command",
     "version": "0.0.1",
     "description": "",
-    "main": "build/index.js",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "bin": {
+        "at-command-cli": "dist/cli.js"
+    },
     "scripts": {
         "build": "webpack",
         "start": "node dist/index.js",
-        "start:cli": "node dist/cli.js",
-        "start:dev:cli": "npm run build && node dist/cli.js",
+        "cli": "node dist/cli.js",
+        "cli:dev": "npm run build && node dist/cli.js",
         "start:dev": "npm run build && node dist/index.js --inspect=0.0.0.0:9229",
         "start:watch": "concurrently --kill-others \"npm run start:watch:compile\" \"npm run start:watch:run\"",
         "start:watch:compile": "webpack --watch",
@@ -23,7 +27,8 @@
         "publish-code-coverage": "codecov",
         "validate": "npm run format && npm run formatTest && npm run lint && npm run test:ci && npm run build",
         "prepare": "husky install",
-        "pretty-quick": "pretty-quick --staged"
+        "pretty-quick": "pretty-quick --staged",
+        "prepublish": "npm run build"
     },
     "author": "juanjofp, francescorivola",
     "repository": "",
@@ -52,7 +57,8 @@
         "typescript": "^4.6.3",
         "webpack": "^5.72.0",
         "webpack-cli": "^4.9.2",
-        "webpack-node-externals": "^3.0.0"
+        "webpack-node-externals": "^3.0.0",
+        "webpack-shebang-plugin": "^1.1.7"
     },
     "dependencies": {
         "@serialport/parser-readline": "^10.3.0",
