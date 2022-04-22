@@ -1,0 +1,80 @@
+import { CommandRunnerBuilder, TD1208 } from '@/index';
+
+const serialPath = '/dev/tty.usbmodem214301';
+jest.setTimeout(50000);
+
+describe('LoRa TD1208', () => {
+    let td1208: TD1208.SigfoxTD1208;
+    beforeAll(async () => {
+        const serialPort = await CommandRunnerBuilder.buildSerialPort(
+            serialPath,
+            {
+                baudRate: 9600
+            }
+        );
+        td1208 = TD1208.buildTD1208(serialPort);
+    });
+
+    it('should get its version', async () => {
+        const version = await td1208.getVersion();
+        expect(version).toBe('M10+2015');
+    });
+
+    it('should get configuration info', async () => {
+        const info = await td1208.getInformation();
+
+        expect(info.model).toEqual('Telecom Design TD1207');
+        expect(info.hardwareVersion).toEqual('0F');
+        expect(info.softwareVersion).toEqual('SOFT2068');
+        expect(info.deviceId).toEqual('0020451D');
+        expect(info.serialNumber).toEqual('140558105258');
+        expect(info.region).toEqual('EU868');
+    });
+
+    it('should send a frame to backend', async () => {
+        await td1208.sendData('010203', { timeout: 5000 });
+    });
+
+    it('should fail when send a invalid frame to backend', async () => {
+        expect.assertions(1);
+        try {
+            await td1208.sendData('JUANJO');
+        } catch (error) {
+            expect(error).toEqual(new Error('Invalid command: AT$SF=JUANJO\r'));
+        }
+    });
+
+    it.only('should send a frame to backend and wait for response', async () => {
+        const response = await td1208.sendDataAndWaitForResponse(
+            '01020304050607080910',
+            {
+                timeout: 60000
+            }
+        );
+
+        expect(response).toEqual('');
+    });
+});
+
+// Get Version
+// [ 'ati5\r', 'M10+2015', 'OK' ]
+
+// GetInformation
+// [
+//     'AT&V\r',
+//     'Telecom Design TD1207',
+//     'Hardware Version: 0F',
+//     'Software Version: SOFT2068',
+//     'S/N: 0020451D',
+//     'TDID: 140558105258',
+//     'ACTIVE PROFILE',
+//     'E1 V1 Q0 X1 S200:0 S300:24 S301:2 S302:14 S303:1 S304:1 S305:0 S306:000001FF0000000000000000 S307:1 S308:1395000 S350:0 S351:32768 S352:1 S353:10 S400:000001 S401:FFFFFF S402:0 S403:869700000 S404:14 S405:-95 S406:1',
+//     'OK'
+// ]
+
+// Send Error
+//       [ 'AT$SF=JUANJO\r', 'ERROR' ]
+//  [ 'AT$SF=000102030405060708090A0B0C0D0E0F,2,1\r', 'ERROR' ]
+// Send OK
+//[ 'AT$SF=010203\r', 'OK' ]
+//       [ 'AT$SF=010203040506070809,2,1\r', 'OK', '+RX BEGIN', '+RX END' ]

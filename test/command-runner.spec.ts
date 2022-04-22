@@ -1,6 +1,6 @@
 import { CommandRunnerBuilder, RunCommandTimeoutError } from '@/index';
 import { CommandRunnerBuilderMock } from '@/mocks';
-
+jest.setTimeout(50000);
 const serialPath = '/dev/tty.usbmodem214301';
 
 describe.skip('command-runner', () => {
@@ -241,7 +241,9 @@ describe('command-runner Mock', () => {
         CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
         try {
             await runner.open();
-            const response = await runner.executeCommand('at+version');
+            const response = await runner.executeCommand('at+version', {
+                timeout: 500
+            });
             expect(response).toEqual({
                 data: ['OK V3.0.0.14.H'],
                 command: 'at+version'
@@ -258,7 +260,7 @@ describe('command-runner Mock', () => {
 
         try {
             await runner.open();
-            await runner.executeCommand('at+version', { timeout: 3000 });
+            await runner.executeCommand('at+version', { timeout: 500 });
         } catch (error) {
             if (error instanceof Error) {
                 expect(error.message).toBe(
@@ -279,7 +281,7 @@ describe('command-runner Mock', () => {
         try {
             await runner.open();
             await runner.executeCommand('at+version', {
-                timeout: 1000,
+                timeout: 500,
                 validation: () => false
             });
         } catch (error) {
@@ -296,16 +298,21 @@ describe('command-runner Mock', () => {
     });
 
     it('should run a set of commands and get responses', async () => {
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
         const runner = CommandRunnerBuilder.buildCommandRunner(port);
         CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
 
         const responses = await runner.runCommands([
-            () => runner.executeCommand('at+version'),
-            () => runner.executeCommand('at+version')
+            () => runner.executeCommand('at+version', { timeout: 500 }),
+            () => runner.executeCommand('at+version', { timeout: 500 }),
+            () => runner.executeCommand('at+version', { timeout: 500 })
         ]);
 
         expect(responses).toEqual([
+            {
+                data: ['OK V3.0.0.14.H'],
+                command: 'at+version'
+            },
             {
                 data: ['OK V3.0.0.14.H'],
                 command: 'at+version'
@@ -319,17 +326,17 @@ describe('command-runner Mock', () => {
 
     it('should run a set of commands and catch errors', async () => {
         expect.assertions(1);
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
         const runner = CommandRunnerBuilder.buildCommandRunner(port);
         CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
 
         try {
             await runner.runCommands([
-                () => runner.executeCommand('at+version'),
+                () => runner.executeCommand('at+version', { timeout: 500 }),
                 async () => {
                     throw new Error(`Error in middle of commands`);
                 },
-                () => runner.executeCommand('at+version')
+                () => runner.executeCommand('at+version', { timeout: 500 })
             ]);
         } catch (error) {
             expect(error).toEqual(new Error(`Error in middle of commands`));
@@ -338,12 +345,16 @@ describe('command-runner Mock', () => {
 
     it('should run a complex command and get response', async () => {
         CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
-        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
+        const runner = CommandRunnerBuilderMock.buildCommandRunner(port);
 
         const complexCommand = async function () {
-            const resp1 = await runner.executeCommand('at+version');
-            const resp2 = await runner.executeCommand('at+version');
+            const resp1 = await runner.executeCommand('at+version', {
+                timeout: 500
+            });
+            const resp2 = await runner.executeCommand('at+version', {
+                timeout: 500
+            });
             return {
                 data: [resp1.data[0], resp2.data[0]],
                 command: 'at+version'

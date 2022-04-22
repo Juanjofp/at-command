@@ -259,4 +259,4 @@ export function buildRak811(
     };
 }
 
-export type SigfoxRak811 = ReturnType<typeof buildRak811>;
+export type LoraRak811 = ReturnType<typeof buildRak811>;

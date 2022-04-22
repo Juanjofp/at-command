@@ -10,7 +10,7 @@ const serialPath = '/dev/tty.usbmodem214301';
 jest.setTimeout(50000);
 
 describe.skip('LoRa rak811', () => {
-    let rak811: Rak811.SigfoxRak811;
+    let rak811: Rak811.LoraRak811;
     beforeAll(async () => {
         const serialPort = await CommandRunnerBuilder.buildSerialPort(
             serialPath,
@@ -172,12 +172,12 @@ describe.skip('LoRa rak811', () => {
 });
 
 describe('Mock LoRa rak811', () => {
-    let rak811: Rak811.SigfoxRak811;
+    let rak811: Rak811.LoraRak811;
     let atPort: ATSerialPort;
 
     beforeAll(async () => {
         atPort = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
-        rak811 = Rak811.buildRak811(atPort);
+        rak811 = Rak811.buildRak811(atPort, { commandTimeout: 500 });
     });
 
     beforeEach(async () => {
