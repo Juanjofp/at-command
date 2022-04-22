@@ -3,7 +3,7 @@ import { CommandRunnerBuilder, TD1208 } from '@/index';
 const serialPath = '/dev/tty.usbmodem214301';
 jest.setTimeout(50000);
 
-describe('LoRa TD1208', () => {
+describe.skip('LoRa TD1208', () => {
     let td1208: TD1208.SigfoxTD1208;
     beforeAll(async () => {
         const serialPort = await CommandRunnerBuilder.buildSerialPort(
@@ -44,15 +44,15 @@ describe('LoRa TD1208', () => {
         }
     });
 
-    it.only('should send a frame to backend and wait for response', async () => {
+    it('should send a frame to backend and wait for response', async () => {
         const response = await td1208.sendDataAndWaitForResponse(
-            '01020304050607080910',
+            '010203040506070809101112',
             {
                 timeout: 60000
             }
         );
 
-        expect(response).toEqual('');
+        expect(response).toEqual('aabbccddeeff2022');
     });
 });
 
@@ -78,3 +78,16 @@ describe('LoRa TD1208', () => {
 // Send OK
 //[ 'AT$SF=010203\r', 'OK' ]
 //       [ 'AT$SF=010203040506070809,2,1\r', 'OK', '+RX BEGIN', '+RX END' ]
+// [
+//     'AT$SF=010203040506070809101112,2,1\r',
+//     'OK',
+//     '+RX BEGIN',
+//     '+RX=aa bb cc dd ee ff 20 22 ',
+//     '+RX END'
+// ]
+// [
+//     'AT$SF=010203040506070809101112,2,1\r',
+//     'OK',
+//     '+RX BEGIN',
+//     '+RX END'
+// ]

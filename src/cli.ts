@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { CommandRunnerBuilder, Rak811 } from '.';
+import { CommandRunnerBuilder, Rak811, TD1208 } from '.';
 
 const commands: Record<
     string,
@@ -18,30 +18,38 @@ const commands: Record<
         return `Listing ports:\n${output}`;
     },
 
-    async version(portName) {
+    async version(model, portName) {
         requirePortName(portName, 'version');
-        const rak811 = await initRAk811(portName);
-        const version = await rak811.getVersion();
+        const device = await initDevice(model, portName);
+        const version = await device.getVersion();
         return `Lora RAk811 version ${version}`;
     },
 
-    async status(portName) {
+    async status(model, portName) {
         requirePortName(portName, 'status');
-        const rak811 = await initRAk811(portName);
-        const information = await rak811.getInformation();
+        const device = await initDevice(model, portName);
+        const information = await device.getInformation();
         const outputKeys = Object.keys(
             information
         ) as (keyof typeof information)[];
         const output = outputKeys.map(key => `${key}: ${information[key]}`);
-        return `Lora RAk811 status:\n${output.join('\n')}`;
+        return `Device ${model} status:\n${output.join('\n')}`;
     },
 
-    async send(portName, ...params: string[]) {
+    async send(model, portName, ...params: string[]) {
         requirePortName(portName, 'version');
-        const rak811 = await initRAk811(portName);
+        const device = await initDevice(model, portName);
         const [payload] = params;
-        await rak811.sendUnconfirmedData(payload);
-        return `Lora RAk811 sent:\n${payload}`;
+        await sendData(device, payload);
+        return `Device ${model} sent: ${payload}`;
+    },
+
+    async sendWait(model, portName, ...params: string[]) {
+        requirePortName(portName, 'version');
+        const device = await initDevice(model, portName);
+        const [payload] = params;
+        const response = await sendDataAndWait(device, payload);
+        return `Device ${model} received:\n${response}`;
     }
 };
 
@@ -51,20 +59,62 @@ function requirePortName(portName: string, command = 'this command') {
     }
 }
 
+async function sendDataAndWait(
+    device: TD1208.SigfoxTD1208 | Rak811.LoraRak811,
+    payload: string
+) {
+    if ('sendUnconfirmedDataAndWaitForResponse' in device) {
+        return await device.sendUnconfirmedDataAndWaitForResponse(payload, {
+            timeout: 20000
+        });
+    } else {
+        return await device.sendDataAndWaitForResponse(payload, {
+            timeout: 40000
+        });
+    }
+}
+
+async function sendData(
+    device: TD1208.SigfoxTD1208 | Rak811.LoraRak811,
+    payload: string
+) {
+    if ('sendUnconfirmedData' in device) {
+        await device.sendUnconfirmedData(payload, { timeout: 20000 });
+    } else {
+        await device.sendData(payload, { timeout: 40000 });
+    }
+}
+async function initDevice(device: string, portName: string) {
+    if (device === 'rak811') {
+        return initRAk811(portName);
+    }
+    return initTD1208(portName);
+}
+
 async function initRAk811(portName: string) {
     const port = await CommandRunnerBuilder.buildSerialPort(portName);
     return Rak811.buildRak811(port);
+}
+
+async function initTD1208(portName: string) {
+    const port = await CommandRunnerBuilder.buildSerialPort(portName, {
+        baudRate: 9600
+    });
+    return TD1208.buildTD1208(port);
 }
 
 function printMenu() {
     console.log('\n\n------------ MENU ----------------------');
     console.log('Commands:');
     console.log('  list');
-    console.log('  version <portName>');
-    console.log('  status <portName>');
-    console.log('  send <portName> <hexData>');
+    console.log('  version <RAK811|TD1208> <portName>');
+    console.log('  status <RAK811|TD1208> <portName>');
+    console.log('  send <RAK811|TD1208> <portName> <hexData>');
+    console.log('  sendWait <RAK811|TD1208> <portName> <hexData>');
     console.log('\n----------------------------------------');
-    console.log('  Sample: c511c3-cli /dev/ttyS0 version');
+    console.log(
+        '  Sample: @juanjofp/at-command-cli version rak811 /dev/ttyUSB0'
+    );
     console.log('----------------------------------------\n\n');
 }
 function printMessage(message: unknown) {
@@ -77,22 +127,23 @@ function printError(error: Error) {
 }
 function extractArguments() {
     const args = process.argv.slice(2);
-    const [command, portName, ...params] = args;
+    const [command, model, portName, ...params] = args;
     if (!command || !commands[command]) {
         throw new Error(`Invalid command: ${command}`);
     }
     return {
         command,
+        model,
         portName,
         params
     };
 }
 async function main() {
     try {
-        const { command, portName, params } = extractArguments();
+        const { command, model, portName, params } = extractArguments();
         const commandFn = commands[command];
         if (typeof commandFn === 'function') {
-            const response = await commandFn(portName, ...params);
+            const response = await commandFn(model, portName, ...params);
             printMessage(response);
         } else {
             printError(new Error(`Invalid command: ${command}`));
