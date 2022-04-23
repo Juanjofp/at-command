@@ -1,9 +1,11 @@
+import { ATSerialPort } from '@/serialports';
+import { CommandRunnerBuilder, CommandResult } from '@/command-runner';
+import { LoraDeps } from './models';
 import {
-    ATSerialPort,
-    CommandRunnerBuilder,
-    CommandResult
-} from '@/command-runner';
-import { LoraDeps, LoraResponseError } from './models';
+    trimValue,
+    validateCommand,
+    waitForReceivedValidation
+} from './validators';
 
 export function buildRak811(
     serialPort: ATSerialPort,
@@ -21,9 +23,6 @@ export function buildRak811(
         return response.data[0].split(' ')[1];
     }
 
-    function trimValue(line: string) {
-        return line.split(':')[1].trim() || 'unknown';
-    }
     function parseInformation(data: string[]) {
         const region = trimValue(data[1]);
         const joinMode = trimValue(data[5]);
@@ -55,26 +54,6 @@ export function buildRak811(
     async function getInformation() {
         const response = await runner.runCommand(runInformationCommand);
         return parseInformation(response.data);
-    }
-
-    function validateOrThrowError(data: string[]) {
-        data.forEach(response => {
-            if (response.toLowerCase().startsWith('error')) {
-                const errorCode = trimValue(response);
-                throw new LoraResponseError(errorCode);
-            }
-        });
-    }
-    function validateCommand(data: string[]) {
-        if (data.length > 0) {
-            validateOrThrowError(data);
-            for (const response of data) {
-                if (response.toLowerCase().startsWith('ok')) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     async function runSetDeviceEui(devEui: string) {
@@ -177,19 +156,6 @@ export function buildRak811(
         await sendData(data, { timeout });
     }
 
-    function waitForReceivedValidation(data: string[]) {
-        validateOrThrowError(data);
-        if (data.length >= 2) {
-            const [result, message] = data;
-            if (
-                result.toLowerCase().startsWith('ok') &&
-                message.toLowerCase().startsWith('at+recv=')
-            ) {
-                return true;
-            }
-        }
-        return false;
-    }
     function parseDataReceived(data: string) {
         const [, message] = data.split('=');
         const [status, response] = message.split(':');

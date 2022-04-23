@@ -1,18 +1,18 @@
 import {
     ATSerialPort,
-    CommandRunnerBuilder,
+    ATSerialPortBuilder,
     LoraResponseError,
     Rak811
 } from '@/index';
 import { CommandRunnerBuilderMock } from '@/mocks';
 
 const serialPath = '/dev/tty.usbmodem214301';
-jest.setTimeout(50000);
+jest.setTimeout(60000);
 
 describe.skip('LoRa rak811', () => {
     let rak811: Rak811.LoraRak811;
     beforeAll(async () => {
-        const serialPort = await CommandRunnerBuilder.buildSerialPort(
+        const serialPort = await ATSerialPortBuilder.buildSerialPort(
             serialPath,
             {
                 baudRate: 115200

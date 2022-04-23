@@ -1,11 +1,15 @@
-import { CommandRunnerBuilder, RunCommandTimeoutError } from '@/index';
+import {
+    ATSerialPortBuilder,
+    CommandRunnerBuilder,
+    RunCommandTimeoutError
+} from '@/index';
 import { CommandRunnerBuilderMock } from '@/mocks';
 jest.setTimeout(50000);
 const serialPath = '/dev/tty.usbmodem214301';
 
 describe.skip('command-runner', () => {
     it('should return a list of SerialPorts', async () => {
-        const list = await CommandRunnerBuilder.getSerialPortList();
+        const list = await ATSerialPortBuilder.getSerialPortList();
         expect(list).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({
@@ -20,12 +24,12 @@ describe.skip('command-runner', () => {
     });
 
     it('should return a closed serial port', async () => {
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
         expect(port.isOpen()).toBe(false);
     });
 
     it('should open and close a serialport', async () => {
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
         expect(port.isOpen()).toBe(false);
         await port.open();
         expect(port.isOpen()).toBe(true);
@@ -34,7 +38,7 @@ describe.skip('command-runner', () => {
     });
 
     it('should open once', async () => {
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
         expect(port.isOpen()).toBe(false);
         await port.open();
         expect(port.isOpen()).toBe(true);
@@ -47,7 +51,7 @@ describe.skip('command-runner', () => {
     });
 
     it('should close once', async () => {
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
         expect(port.isOpen()).toBe(false);
         await port.open();
         expect(port.isOpen()).toBe(true);
@@ -62,7 +66,7 @@ describe.skip('command-runner', () => {
     it('should throw an exception with invalid path', async () => {
         expect.assertions(1);
         try {
-            await CommandRunnerBuilder.buildSerialPort('/invalid/path');
+            await ATSerialPortBuilder.buildSerialPort('/invalid/path');
         } catch (error) {
             if (error instanceof Error) {
                 expect(error.message).toBe(
@@ -73,7 +77,7 @@ describe.skip('command-runner', () => {
     });
 
     it('should run a command and get response', async () => {
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
         const runner = CommandRunnerBuilder.buildCommandRunner(port);
 
         try {
@@ -90,7 +94,7 @@ describe.skip('command-runner', () => {
 
     it('should throw an error if not respond in 3 seconds', async () => {
         expect.assertions(1);
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath, {
+        const port = await ATSerialPortBuilder.buildSerialPort(serialPath, {
             baudRate: 9600
         });
         const runner = CommandRunnerBuilder.buildCommandRunner(port);
@@ -111,7 +115,7 @@ describe.skip('command-runner', () => {
 
     it('should throw an error if not validation match', async () => {
         expect.assertions(3);
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
         const runner = CommandRunnerBuilder.buildCommandRunner(port);
 
         try {
@@ -134,7 +138,7 @@ describe.skip('command-runner', () => {
     });
 
     it('should run a set of commands and get responses', async () => {
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
         const runner = CommandRunnerBuilder.buildCommandRunner(port);
 
         const responses = await runner.runCommands([
@@ -155,7 +159,7 @@ describe.skip('command-runner', () => {
     });
 
     it('should run a complex command and get response', async () => {
-        const port = await CommandRunnerBuilder.buildSerialPort(serialPath);
+        const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
         const runner = CommandRunnerBuilder.buildCommandRunner(port);
 
         const complexCommand = async function () {

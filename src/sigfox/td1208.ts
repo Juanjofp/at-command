@@ -1,8 +1,5 @@
-import {
-    ATSerialPort,
-    CommandRunner,
-    CommandRunnerBuilder
-} from '@/command-runner';
+import type { ATSerialPort } from '@/serialports';
+import { CommandRunner, CommandRunnerBuilder } from '@/command-runner';
 
 export type SigfoxDeps = {
     runner?: CommandRunner;

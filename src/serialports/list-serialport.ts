@@ -1,5 +1,5 @@
 import { SerialPort } from 'serialport';
-import { SerialPortInfo } from '@/command-runner/models';
+import { SerialPortInfo } from './models';
 
 export async function getSerialPortList(): Promise<SerialPortInfo[]> {
     const ports = await SerialPort.list();

@@ -1,4 +1,4 @@
-import { CommandRunnerBuilder, Rak11300 } from '@/index';
+import { ATSerialPortBuilder, Rak11300 } from '@/index';
 
 const serialPath = '/dev/tty.usbmodem1101';
 jest.setTimeout(50000);
@@ -6,7 +6,7 @@ jest.setTimeout(50000);
 describe('LoRa rak11300', () => {
     let rak11300: Rak11300.LoraRak11300;
     beforeAll(async () => {
-        const serialPort = await CommandRunnerBuilder.buildSerialPort(
+        const serialPort = await ATSerialPortBuilder.buildSerialPort(
             serialPath
         );
         rak11300 = Rak11300.buildRak11300(serialPort);
@@ -14,22 +14,22 @@ describe('LoRa rak11300', () => {
 
     it('should get its version', async () => {
         const version = await rak11300.getVersion();
-        expect(version).toBe('V3.0.0.14.H');
+        expect(version).toBe('1.0.0');
     });
 
-    // it('should get configuration info', async () => {
-    //     const info = await rak811.getInformation();
-    //
-    //     expect(info.region).toEqual('EU868');
-    //     expect(info.joinMode).toEqual('OTAA');
-    //     expect(info.devEui).toEqual('AC1F09FFFE04891A');
-    //     expect(info.appEui).toEqual('AC1F09FFF8680811');
-    //     expect(info.appKey).toEqual('AC1F09FFFE04891AAC1F09FFF8680811');
-    //     expect(info.classType).toEqual('A');
-    //     expect(info.isConfirm).toEqual(false);
-    //     expect(info.isJoined).toBe(true);
-    // });
-    //
+    it.skip('should get configuration info', async () => {
+        const info = await rak11300.getInformation();
+
+        expect(info.region).toEqual('EU868');
+        // expect(info.joinMode).toEqual('OTAA');
+        // expect(info.devEui).toEqual('AC1F09FFFE04891A');
+        // expect(info.appEui).toEqual('AC1F09FFF8680811');
+        // expect(info.appKey).toEqual('AC1F09FFFE04891AAC1F09FFF8680811');
+        // expect(info.classType).toEqual('A');
+        // expect(info.isConfirm).toEqual(false);
+        // expect(info.isJoined).toBe(true);
+    });
+
     // it('should set a invalid device EUI', async () => {
     //     expect.assertions(2);
     //     const devEui = 'AC1F09FFFE04891A';

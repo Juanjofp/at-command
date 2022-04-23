@@ -79,7 +79,7 @@ function buildATSerialPort(port: SerialPort): ATSerialPort {
         close
     };
 }
-export async function buildSerialPort(
+export async function buildNodeSerialport(
     path: string,
     options: SerialPortOptions = {}
 ): Promise<ATSerialPort> {

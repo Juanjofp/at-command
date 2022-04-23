@@ -1,11 +1,11 @@
+import { Transform } from 'stream';
 import {
     ATSerialPort,
-    CommandRunnerBuilder,
     SerialPortInfo,
-    WriteValues
-} from '@/command-runner';
-import { Transform } from 'stream';
-import { buildCommandRunner } from '@/command-runner/runner';
+    WriteValues,
+    CommandRunnerBuilder,
+    ATSerialPortBuilder
+} from '@/index';
 
 export type CommandRunnerBuilderMock = {
     mockClear(): void;
@@ -13,7 +13,8 @@ export type CommandRunnerBuilderMock = {
     mockCreateSerialPortThrowError(error: Error): void;
     mockReadFromSerialPort(data: string[]): void;
     mockReadFromSerialPortOnce(data: string[]): void;
-} & CommandRunnerBuilder;
+} & CommandRunnerBuilder &
+    ATSerialPortBuilder;
 
 let serialPortList: SerialPortInfo[] = [];
 function mockGetSerialPortList(list: SerialPortInfo[]) {
@@ -89,5 +90,5 @@ export const CommandRunnerBuilderMock: CommandRunnerBuilderMock = {
     mockReadFromSerialPortOnce,
     getSerialPortList: () => Promise.resolve(serialPortList),
     buildSerialPort,
-    buildCommandRunner
+    buildCommandRunner: CommandRunnerBuilder.buildCommandRunner
 };

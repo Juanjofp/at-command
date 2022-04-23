@@ -1,4 +1,4 @@
-import { CommandRunnerBuilder, TD1208 } from '@/index';
+import { ATSerialPortBuilder, TD1208 } from '@/index';
 
 const serialPath = '/dev/tty.usbmodem214301';
 jest.setTimeout(50000);
@@ -6,7 +6,7 @@ jest.setTimeout(50000);
 describe.skip('LoRa TD1208', () => {
     let td1208: TD1208.SigfoxTD1208;
     beforeAll(async () => {
-        const serialPort = await CommandRunnerBuilder.buildSerialPort(
+        const serialPort = await ATSerialPortBuilder.buildSerialPort(
             serialPath,
             {
                 baudRate: 9600
