@@ -1,3 +1,10 @@
+import { CommandRunner } from '@/command-runner';
+
+export type LoraDeps = {
+    runner?: CommandRunner;
+    commandTimeout?: number;
+};
+
 const ErrorCodes: Record<string, string> = {
     '1': 'The last command received is an unsupported AT command',
     '2': 'Invalid parameter in the AT command',

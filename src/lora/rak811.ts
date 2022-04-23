@@ -1,15 +1,10 @@
 import {
     ATSerialPort,
     CommandRunnerBuilder,
-    CommandRunner,
     CommandResult
 } from '@/command-runner';
-import { LoraResponseError } from '@/lora/models';
+import { LoraDeps, LoraResponseError } from './models';
 
-export type LoraDeps = {
-    runner?: CommandRunner;
-    commandTimeout?: number;
-};
 export function buildRak811(
     serialPort: ATSerialPort,
     {
