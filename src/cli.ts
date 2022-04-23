@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-import { CommandRunnerBuilder, Rak811, TD1208 } from '.';
+import { ATSerialPortBuilder, Rak811, TD1208 } from '.';
 
 const commands: Record<
     string,
     (portName: string, ...args: string[]) => unknown
 > = {
     async list() {
-        const ports = await CommandRunnerBuilder.getSerialPortList();
+        const ports = await ATSerialPortBuilder.getSerialPortList();
         const output = ports
             .map(
                 (port, index) =>
@@ -92,12 +92,12 @@ async function initDevice(device: string, portName: string) {
 }
 
 async function initRAk811(portName: string) {
-    const port = await CommandRunnerBuilder.buildSerialPort(portName);
+    const port = await ATSerialPortBuilder.buildSerialPort(portName);
     return Rak811.buildRak811(port);
 }
 
 async function initTD1208(portName: string) {
-    const port = await CommandRunnerBuilder.buildSerialPort(portName, {
+    const port = await ATSerialPortBuilder.buildSerialPort(portName, {
         baudRate: 9600
     });
     return TD1208.buildTD1208(port);
