@@ -17,17 +17,23 @@ describe('LoRa rak11300', () => {
         expect(version).toBe('1.0.0');
     });
 
-    it.skip('should get configuration info', async () => {
+    it('should get configuration info', async () => {
         const info = await rak11300.getInformation();
 
         expect(info.region).toEqual('EU868');
-        // expect(info.joinMode).toEqual('OTAA');
-        // expect(info.devEui).toEqual('AC1F09FFFE04891A');
-        // expect(info.appEui).toEqual('AC1F09FFF8680811');
-        // expect(info.appKey).toEqual('AC1F09FFFE04891AAC1F09FFF8680811');
-        // expect(info.classType).toEqual('A');
-        // expect(info.isConfirm).toEqual(false);
-        // expect(info.isJoined).toBe(true);
+        expect(info.joinMode).toEqual('OTAA');
+        expect(info.devEui).toEqual('E660CCC14B738A30');
+        expect(info.appEui).toEqual('308A734BC1CC60E6');
+        expect(info.appKey).toEqual('E660CCC14B738A30308A734BC1CC60E6');
+        expect(info.classType).toEqual('A');
+        expect(info.isConfirm).toEqual(false);
+        expect(info.isJoined).toBe(false);
+        expect(info.isAutoJoined).toBe(true);
+
+        expect(info.devAddress).toEqual('4634BEBA');
+        expect(info.nwsKey).toEqual('E660CCC14B738A30308A734BC1CC60E6');
+        expect(info.appsKey).toEqual('E660CCC14B738A30308A734BC1CC60E6');
+        expect(info.isDutyCycle).toBe(false);
     });
 
     // it('should set a invalid device EUI', async () => {
@@ -161,3 +167,44 @@ describe('LoRa rak11300', () => {
     //     expect(response.snr).toEqual(0);
     // });
 });
+
+// GetVersion
+//       [ 'AT+VER=?\r', '+VER:1.0.0 Apr 21 2022 16:04:06', 'OK' ]
+// Get Information
+// [
+//     'AT+STATUS=?\rDevice status:\n' +
+//     '   Auto join enabled\n' +
+//     '   Mode LPWAN\n' +
+//     'LPWAN status:\n' +
+//     '   Marks: AA 55\n' +
+//     '   Dev EUI E660CCC14B738A30\n' +
+//     '   App EUI 308A734BC1CC60E6\n' +
+//     '   App Key E660CCC14B738A30308A734BC1CC60E6\n' +
+//     '   Dev Addr 4634BEBA\n' +
+//     '   NWS Key E660CCC14B738A30308A734BC1CC60E6\n' +
+//     '   Apps Key E660CCC14B738A30308A734BC1CC60E6\n' +
+//     '   OTAA enabled\n' +
+//     '   ADR enabled\n' +
+//     '   Public Network\n' +
+//     '   Dutycycle disabled\n' +
+//     '   Repeat time 0\n' +
+//     '   Join trials 10\n' +
+//     '   TX Power 0\n' +
+//     '   DR 3\n' +
+//     '   Class 0\n' +
+//     '   Subband 1\n' +
+//     '   Fport 2\n' +
+//     '   Unconfirmed Message\n' +
+//     '   Region EU868\n' +
+//     '   Network not joined\n' +
+//     'LoRa P2P status:\n' +
+//     '   P2P frequency 916000000\n' +
+//     '   P2P TX Power 22\n' +
+//     '   P2P BW 125\n' +
+//     '   P2P SF 7\n' +
+//     '   P2P CR 1\n' +
+//     '   P2P Preamble length 8\n' +
+//     '   P2P Symbol Timeout 0\n',
+//     '+STATUS: ',
+//     'OK'
+// ]
