@@ -124,12 +124,12 @@ describe.skip('LoRa rak811', () => {
     it('should change message confirmation', async () => {
         const info = await rak811.getInformation();
         const toggleConfirmation = !info.isConfirm;
-        await rak811.needsConfirmation(toggleConfirmation);
+        await rak811.setNeedsConfirmation(toggleConfirmation);
 
         const infoChanged = await rak811.getInformation();
         expect(infoChanged.isConfirm).toEqual(toggleConfirmation);
 
-        await rak811.needsConfirmation(false);
+        await rak811.setNeedsConfirmation(false);
         const restoredInfo = await rak811.getInformation();
         expect(restoredInfo.isConfirm).toEqual(false);
     });
@@ -288,6 +288,7 @@ describe('Mock LoRa rak811', () => {
                     `Lora error code 2: Invalid parameter in the AT command`
                 );
                 expect(error.getLoraError()).toEqual({
+                    model: 'RAK811',
                     code: 2,
                     description: 'Invalid parameter in the AT command'
                 });
@@ -306,7 +307,7 @@ describe('Mock LoRa rak811', () => {
         } catch (error) {
             if (error instanceof LoraResponseError) {
                 expect(error.message).toBe(
-                    `Lora error code 999: Unknown error code`
+                    `Lora error code 999: Unknown error code 999`
                 );
             }
         }
@@ -434,12 +435,12 @@ describe('Mock LoRa rak811', () => {
         CommandRunnerBuilderMock.mockReadFromSerialPortOnce(['OK']);
         CommandRunnerBuilderMock.mockReadFromSerialPortOnce(infoData);
 
-        await rak811.needsConfirmation(true);
+        await rak811.setNeedsConfirmation(true);
 
         const info = await rak811.getInformation();
         expect(info.isConfirm).toEqual(true);
 
-        await rak811.needsConfirmation(false);
+        await rak811.setNeedsConfirmation(false);
 
         const infoRestored = await rak811.getInformation();
         expect(infoRestored.isConfirm).toEqual(false);

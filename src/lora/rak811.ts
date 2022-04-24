@@ -112,7 +112,7 @@ export function buildRak811(
             }
         );
     }
-    async function needsConfirmation(confirmation: boolean) {
+    async function setNeedsConfirmation(confirmation: boolean) {
         await runner.runCommand(() => runConfirmCommand(confirmation));
     }
 
@@ -212,7 +212,7 @@ export function buildRak811(
         setAppEui,
         setAppKey,
         join,
-        needsConfirmation,
+        setNeedsConfirmation,
         sendUnconfirmedData,
         sendConfirmedData,
         sendUnconfirmedDataAndWaitForResponse,

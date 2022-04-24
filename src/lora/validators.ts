@@ -1,20 +1,28 @@
-import { LoraResponseError } from '@/lora/models';
+import { LoraModels, LoraResponseError } from '@/lora/models';
 
 export function trimValue(line: string) {
     return line.split(':')[1].trim() || 'unknown';
 }
-export function validateOrThrowError(data: string[], errorMessage = 'error') {
+export function validateOrThrowError(
+    data: string[],
+    errorMessage: string,
+    model: LoraModels
+) {
     data.forEach(response => {
         if (response.toLowerCase().startsWith(errorMessage)) {
             const errorCode = trimValue(response);
-            throw new LoraResponseError(errorCode);
+            throw new LoraResponseError(errorCode, model);
         }
     });
 }
-export function validateCommand(data: string[], errorMessage = 'error') {
+export function validateCommand(
+    data: string[],
+    errorMessage = 'error',
+    model: LoraModels = LoraModels.RAK811
+) {
     if (data.length > 0) {
         console.log(data);
-        validateOrThrowError(data, errorMessage);
+        validateOrThrowError(data, errorMessage, model);
         for (const response of data) {
             if (response.toLowerCase().startsWith('ok')) {
                 return true;
@@ -24,8 +32,12 @@ export function validateCommand(data: string[], errorMessage = 'error') {
     return false;
 }
 
-export function waitForReceivedValidation(data: string[]) {
-    validateOrThrowError(data);
+export function waitForReceivedValidation(
+    data: string[],
+    errorMessage = 'error',
+    model: LoraModels = LoraModels.RAK811
+) {
+    validateOrThrowError(data, errorMessage, model);
     if (data.length >= 2) {
         const [result, message] = data;
         if (

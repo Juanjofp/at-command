@@ -1,4 +1,4 @@
-import { ATSerialPortBuilder, Rak11300 } from '@/index';
+import { ATSerialPortBuilder, LoraResponseError, Rak11300 } from '@/index';
 
 const serialPath = '/dev/tty.usbmodem1101';
 jest.setTimeout(50000);
@@ -27,108 +27,186 @@ describe('LoRa rak11300', () => {
         expect(info.appKey).toEqual('E660CCC14B738A30308A734BC1CC60E6');
         expect(info.classType).toEqual('A');
         expect(info.isConfirm).toEqual(false);
-        expect(info.isJoined).toBe(false);
+        expect(info.isJoined).toBe(true);
         expect(info.isAutoJoined).toBe(true);
 
         expect(info.devAddress).toEqual('4634BEBA');
-        expect(info.nwsKey).toEqual('E660CCC14B738A30308A734BC1CC60E6');
+        expect(info.nwksKey).toEqual('E660CCC14B738A30308A734BC1CC60E6');
         expect(info.appsKey).toEqual('E660CCC14B738A30308A734BC1CC60E6');
         expect(info.isDutyCycle).toBe(false);
     });
 
-    // it('should set a invalid device EUI', async () => {
-    //     expect.assertions(2);
-    //     const devEui = 'AC1F09FFFE04891A';
-    //
-    //     try {
-    //         await rak811.setDeviceEui('invalid');
-    //     } catch (error) {
-    //         if (error instanceof LoraResponseError) {
-    //             expect(error.message).toBe(
-    //                 `Lora error code 2: Invalid parameter in the AT command`
-    //             );
-    //             const info = await rak811.getInformation();
-    //             expect(info.devEui).toEqual(devEui);
-    //         }
-    //     }
-    // });
-    //
-    // it('should set a valid device EUI', async () => {
-    //     const devEui = 'AC1F09FFFE04891A';
-    //
-    //     await rak811.setDeviceEui(devEui);
-    //     const info = await rak811.getInformation();
-    //
-    //     expect(info.devEui).toEqual(devEui);
-    // });
-    //
-    // it('should set a invalid APP EUI', async () => {
-    //     expect.assertions(2);
-    //     const appEui = 'AC1F09FFF8680811';
-    //
-    //     try {
-    //         await rak811.setAppEui('invalid');
-    //     } catch (error) {
-    //         if (error instanceof LoraResponseError) {
-    //             expect(error.message).toBe(
-    //                 `Lora error code 2: Invalid parameter in the AT command`
-    //             );
-    //             const info = await rak811.getInformation();
-    //             expect(info.appEui).toEqual(appEui);
-    //         }
-    //     }
-    // });
-    //
-    // it('should set a valid APP EUI', async () => {
-    //     const appEui = 'AC1F09FFF8680811';
-    //
-    //     await rak811.setAppEui(appEui);
-    //
-    //     const info = await rak811.getInformation();
-    //     expect(info.appEui).toEqual(appEui);
-    // });
-    //
-    // it('should set a invalid App Key', async () => {
-    //     expect.assertions(2);
-    //     const appKey = 'AC1F09FFFE04891AAC1F09FFF8680811';
-    //
-    //     try {
-    //         await rak811.setAppKey('invalid');
-    //     } catch (error) {
-    //         if (error instanceof LoraResponseError) {
-    //             expect(error.message).toBe(
-    //                 `Lora error code 2: Invalid parameter in the AT command`
-    //             );
-    //             const info = await rak811.getInformation();
-    //             expect(info.appKey).toEqual(appKey);
-    //         }
-    //     }
-    // });
-    //
-    // it('should set a valid APP EUI', async () => {
-    //     const appKey = 'AC1F09FFFE04891AAC1F09FFF8680811';
-    //
-    //     await rak811.setAppKey(appKey);
-    //
-    //     const info = await rak811.getInformation();
-    //     expect(info.appKey).toEqual(appKey);
-    // });
-    //
-    // it('should join send a frame to gateway', async () => {
+    it('should fails when try to set a invalid device EUI', async () => {
+        expect.assertions(2);
+        const devEui = 'E660CCC14B738A30';
+
+        try {
+            await rak11300.setDeviceEui('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 5: Invalid parameter in the AT command`
+                );
+                const info = await rak11300.getInformation();
+                expect(info.devEui).toEqual(devEui);
+            }
+        }
+    });
+
+    it('should set a valid device EUI', async () => {
+        const devEui = 'E660CCC14B738A30';
+
+        await rak11300.setDeviceEui(devEui);
+        const info = await rak11300.getInformation();
+
+        expect(info.devEui).toEqual(devEui);
+    });
+
+    it('should fails when try to set a invalid APP EUI', async () => {
+        expect.assertions(2);
+        const appEui = '308A734BC1CC60E6';
+
+        try {
+            await rak11300.setAppEui('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 5: Invalid parameter in the AT command`
+                );
+                const info = await rak11300.getInformation();
+                expect(info.appEui).toEqual(appEui);
+            }
+        }
+    });
+
+    it('should set a valid APP EUI', async () => {
+        const appEui = '308A734BC1CC60E6';
+
+        await rak11300.setAppEui(appEui);
+
+        const info = await rak11300.getInformation();
+        expect(info.appEui).toEqual(appEui);
+    });
+
+    it('should fails when try to set a invalid App Key', async () => {
+        expect.assertions(2);
+        const appKey = 'E660CCC14B738A30308A734BC1CC60E6';
+
+        try {
+            await rak11300.setAppKey('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 5: Invalid parameter in the AT command`
+                );
+                const info = await rak11300.getInformation();
+                expect(info.appKey).toEqual(appKey);
+            }
+        }
+    });
+
+    it('should set a valid APP Key', async () => {
+        const appKey = 'E660CCC14B738A30308A734BC1CC60E6';
+
+        await rak11300.setAppKey(appKey);
+
+        const info = await rak11300.getInformation();
+        expect(info.appKey).toEqual(appKey);
+    });
+
+    it('should fails when try to set a invalid Apps Key', async () => {
+        expect.assertions(2);
+        const appsKey = 'E660CCC14B738A30308A734BC1CC60E6';
+
+        try {
+            await rak11300.setAppKey('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 5: Invalid parameter in the AT command`
+                );
+                const info = await rak11300.getInformation();
+                expect(info.appKey).toEqual(appsKey);
+            }
+        }
+    });
+
+    it('should set a valid APPs Key', async () => {
+        const appsKey = 'E660CCC14B738A30308A734BC1CC60E6';
+
+        await rak11300.setAppsKey(appsKey);
+
+        const info = await rak11300.getInformation();
+        expect(info.appsKey).toEqual(appsKey);
+    });
+
+    it('should fails when try to set a invalid Network Key', async () => {
+        expect.assertions(2);
+        const nwsKey = 'E660CCC14B738A30308A734BC1CC60E6';
+
+        try {
+            await rak11300.setNwksKey('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 5: Invalid parameter in the AT command`
+                );
+                const info = await rak11300.getInformation();
+                expect(info.appKey).toEqual(nwsKey);
+            }
+        }
+    });
+
+    it('should set a valid Network Key', async () => {
+        const nwsKey = 'E660CCC14B738A30308A734BC1CC60E6';
+
+        await rak11300.setNwksKey(nwsKey);
+
+        const info = await rak11300.getInformation();
+        expect(info.nwksKey).toEqual(nwsKey);
+    });
+
+    it('should fails when try to set a invalid device address', async () => {
+        expect.assertions(2);
+        const deviceAddress = '4634BEBA';
+
+        try {
+            await rak11300.setDevAddress('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 5: Invalid parameter in the AT command`
+                );
+                const info = await rak11300.getInformation();
+                expect(info.devAddress).toEqual(deviceAddress);
+            }
+        }
+    });
+
+    it('should set a valid device address', async () => {
+        const deviceAddress = '4634BEBA';
+
+        await rak11300.setDevAddress(deviceAddress);
+
+        const info = await rak11300.getInformation();
+        expect(info.devAddress).toEqual(deviceAddress);
+    });
+
+    it('should change message confirmation', async () => {
+        const info = await rak11300.getInformation();
+        const toggleConfirmation = !info.isConfirm;
+        await rak11300.setNeedsConfirmation(toggleConfirmation);
+
+        const infoChanged = await rak11300.getInformation();
+        expect(infoChanged.isConfirm).toEqual(toggleConfirmation);
+
+        await rak11300.setNeedsConfirmation(false);
+        const restoredInfo = await rak11300.getInformation();
+        expect(restoredInfo.isConfirm).toEqual(false);
+    });
+
+    // it('should join with a gateway', async () => {
     //     await rak811.join({ timeout: 10000 });
-    // });
-    //
-    // it('should change message confirmation', async () => {
-    //     const info = await rak811.getInformation();
-    //     const toggleConfirmation = !info.isConfirm;
-    //     await rak811.needsConfirmation(toggleConfirmation);
-    //
-    //     const infoChanged = await rak811.getInformation();
-    //     expect(infoChanged.isConfirm).toEqual(toggleConfirmation);
-    //
-    //     await rak811.needsConfirmation(false);
-    //     const restoredInfo = await rak811.getInformation();
-    //     expect(restoredInfo.isConfirm).toEqual(false);
     // });
     //
     // it('should send an unconfirmed frame to gateway', async () => {
