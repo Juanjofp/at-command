@@ -1,5 +1,4 @@
-import type { ATSerialPort } from '@/serialports';
-import { CommandRunnerBuilder } from '@/command-runner';
+import { CommandRunnerBuilder, ATSerialPort } from '@/index';
 import { LoraDeps, LoraModels } from './models';
 import { validateCommand } from './validators';
 
@@ -159,6 +158,17 @@ export function buildRak11300(
         await runner.runCommand(runSetConfirmation(confirmation));
     }
 
+    function runSetAutoJoin(joinWhenTurnOn: boolean) {
+        return () =>
+            runner.executeCommand(`AT+JOIN=1:${joinWhenTurnOn ? 1 : 0}:8:10`, {
+                timeout: commandTimeout,
+                validation: validateRak11300Command
+            });
+    }
+    async function setAutoJoin(joinWhenTurnOn = true) {
+        await runner.runCommand(runSetAutoJoin(joinWhenTurnOn));
+    }
+
     return {
         getVersion,
         getInformation,
@@ -168,7 +178,8 @@ export function buildRak11300(
         setAppsKey,
         setNwksKey,
         setDevAddress,
-        setNeedsConfirmation
+        setNeedsConfirmation,
+        setAutoJoin
     };
 }
 

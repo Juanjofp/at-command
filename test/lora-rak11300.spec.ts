@@ -205,7 +205,7 @@ describe('LoRa rak11300', () => {
         expect(restoredInfo.isConfirm).toEqual(false);
     });
 
-    it('should change auto join', async () => {
+    it.only('should change auto join', async () => {
         const info = await rak11300.getInformation();
         const toggleAutoJoin = !info.isAutoJoined;
 
