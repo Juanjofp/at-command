@@ -1,9 +1,12 @@
 {
     "name": "@juanjofp/at-command",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "publishConfig": {
+        "access": "public"
+    },
     "bin": {
         "at-command-cli": "dist/cli.js"
     },
@@ -27,7 +30,8 @@
         "publish-code-coverage": "codecov",
         "validate": "npm run format && npm run formatTest && npm run lint && npm run test:ci && npm run build",
         "prepare": "husky install",
-        "pretty-quick": "pretty-quick --staged"
+        "pretty-quick": "pretty-quick --staged",
+        "prepublish": "npm run build"
     },
     "author": "juanjofp, francescorivola",
     "repository": "",

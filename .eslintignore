@@ -4,3 +4,5 @@ coverage
 deploy
 jest.config.js
 .DS_Store
+dist
+.idea
