@@ -27,8 +27,7 @@
         "publish-code-coverage": "codecov",
         "validate": "npm run format && npm run formatTest && npm run lint && npm run test:ci && npm run build",
         "prepare": "husky install",
-        "pretty-quick": "pretty-quick --staged",
-        "prepublish": "npm run build"
+        "pretty-quick": "pretty-quick --staged"
     },
     "author": "juanjofp, francescorivola",
     "repository": "",
