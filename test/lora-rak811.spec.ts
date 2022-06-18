@@ -171,7 +171,7 @@ describe.skip('LoRa rak811', () => {
     });
 });
 
-describe('Mock LoRa rak811', () => {
+describe.skip('Mock LoRa rak811', () => {
     let rak811: Rak811.LoraRak811;
     let atPort: ATSerialPort;
 

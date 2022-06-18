@@ -205,7 +205,14 @@ describe('LoRa rak11300', () => {
         expect(restoredInfo.isConfirm).toEqual(false);
     });
 
-    it.only('should change auto join', async () => {
+    it.skip('should reset the device', async () => {
+        await rak11300.reset();
+
+        const info = await rak11300.getInformation();
+        expect(info).toBeTruthy();
+    });
+
+    it('should change auto join', async () => {
         const info = await rak11300.getInformation();
         const toggleAutoJoin = !info.isAutoJoined;
 
@@ -220,9 +227,17 @@ describe('LoRa rak11300', () => {
         expect(infoAutoJoinEnabled.isAutoJoined).toEqual(true);
     });
 
-    // it('should join with a gateway', async () => {
-    //     await rak811.join({ timeout: 10000 });
-    // });
+    it.only('should join and leave with a gateway', async () => {
+        await rak11300.join();
+
+        let info = await rak11300.getInformation();
+        expect(info.isJoined).toEqual(true);
+
+        await rak11300.leave();
+
+        info = await rak11300.getInformation();
+        expect(info.isJoined).toEqual(false);
+    });
 
     // it('should send an unconfirmed frame to gateway', async () => {
     //     await rak811.sendUnconfirmedData('01020304');

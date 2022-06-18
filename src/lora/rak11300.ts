@@ -1,6 +1,7 @@
-import { CommandRunnerBuilder, ATSerialPort } from '@/index';
+import { CommandRunnerBuilder, ATSerialPort, CommandResult } from '@/index';
 import { LoraDeps, LoraModels } from './models';
 import { validateCommand } from './validators';
+import { runWithRetryDelayed } from '@/utils';
 
 function validateRak11300Command(data: string[]) {
     return validateCommand(data, '+cme error', LoraModels.RAK11300);
@@ -9,7 +10,7 @@ function trimValueRak11300(data: string[], row: number, column: number) {
     const chunk = data[row];
     return chunk.trim().split(' ')[column].trim();
 }
-function parseInformation(data: string[]) {
+function parseInformation({ data }: CommandResult) {
     const statusStringChunks = data[0].split('\n');
 
     const region = trimValueRak11300(statusStringChunks, 23, 1);
@@ -78,7 +79,7 @@ export function buildRak11300(
     }
     async function getInformation() {
         const response = await runner.runCommand(runInformationCommand);
-        return parseInformation(response.data);
+        return parseInformation(response);
     }
 
     function runSetDeviceEui(devEui: string) {
@@ -158,15 +159,89 @@ export function buildRak11300(
         await runner.runCommand(runSetConfirmation(confirmation));
     }
 
-    function runSetAutoJoin(joinWhenTurnOn: boolean) {
+    function runReset() {
         return () =>
-            runner.executeCommand(`AT+JOIN=1:${joinWhenTurnOn ? 1 : 0}:8:10`, {
+            runner.executeCommand(`ATZ`, {
+                timeout: 100
+            });
+    }
+    async function reset() {
+        try {
+            await runner.runCommand(runReset());
+        } catch (error) {
+            // ignore
+        }
+        await runWithRetryDelayed(getVersion, 4, 1000);
+    }
+
+    function runIsJoined() {
+        return () =>
+            runner.executeCommand(`AT+NJS=?`, {
                 timeout: commandTimeout,
                 validation: validateRak11300Command
             });
     }
+    function parseIsJoined(response: CommandResult) {
+        return response.data[1].split(':')[1] === '1';
+    }
+    async function isJoined() {
+        return parseIsJoined(await runner.runCommand(runIsJoined()));
+    }
+
+    function runJoinOrLeave(join: boolean, joinWhenTurnOn: boolean) {
+        return () =>
+            runner.executeCommand(
+                `AT+JOIN=${join ? 1 : 0}:${joinWhenTurnOn ? 1 : 0}:8:10`,
+                {
+                    timeout: commandTimeout,
+                    validation: validateRak11300Command
+                }
+            );
+    }
+    function runSetAutoJoin(joinWhenTurnOn: boolean) {
+        return async () => {
+            const infoResult = await runInformationCommand();
+            const info = parseInformation(infoResult);
+
+            return runJoinOrLeave(info.isJoined, joinWhenTurnOn)();
+        };
+    }
     async function setAutoJoin(joinWhenTurnOn = true) {
         await runner.runCommand(runSetAutoJoin(joinWhenTurnOn));
+    }
+
+    function runJoin() {
+        return async () => {
+            const infoResult = await runInformationCommand();
+            const info = parseInformation(infoResult);
+            if (info.isJoined) {
+                return runIsJoined()();
+            }
+            return await runJoinOrLeave(true, info.isAutoJoined)();
+        };
+    }
+    async function join() {
+        await runner.runCommand(runJoin());
+        const joined = await isJoined();
+        if (joined) return true;
+        await reset();
+        await runWithRetryDelayed(isJoined, 4, 1000);
+    }
+
+    function runLeave() {
+        return async () => {
+            const infoResult = await runInformationCommand();
+            const info = parseInformation(infoResult);
+            if (!info.isJoined) {
+                return runIsJoined()();
+            }
+            await runJoinOrLeave(false, info.isAutoJoined)();
+            return runReset()();
+        };
+    }
+    async function leave() {
+        await runner.runCommand(runLeave());
+        !(await runWithRetryDelayed(isJoined, 4, 1000));
     }
 
     return {
@@ -179,7 +254,11 @@ export function buildRak11300(
         setNwksKey,
         setDevAddress,
         setNeedsConfirmation,
-        setAutoJoin
+        setAutoJoin,
+        reset,
+        isJoined,
+        join,
+        leave
     };
 }
 

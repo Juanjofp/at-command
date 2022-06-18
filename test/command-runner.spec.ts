@@ -180,7 +180,7 @@ describe.skip('command-runner', () => {
     });
 });
 
-describe('command-runner Mock', () => {
+describe.skip('command-runner Mock', () => {
     beforeEach(() => {
         CommandRunnerBuilderMock.mockClear();
     });
