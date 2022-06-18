@@ -3,7 +3,7 @@ import { ATSerialPortBuilder, LoraResponseError, Rak11300 } from '@/index';
 const serialPath = '/dev/tty.usbmodem1101';
 jest.setTimeout(50000);
 
-describe('LoRa rak11300', () => {
+describe.skip('LoRa rak11300', () => {
     let rak11300: Rak11300.LoraRak11300;
     beforeAll(async () => {
         const serialPort = await ATSerialPortBuilder.buildSerialPort(
@@ -227,7 +227,8 @@ describe('LoRa rak11300', () => {
         expect(infoAutoJoinEnabled.isAutoJoined).toEqual(true);
     });
 
-    it.only('should join and leave with a gateway', async () => {
+    it.skip('should join and leave with a gateway', async () => {
+        await rak11300.setAutoJoin(true);
         await rak11300.join();
 
         let info = await rak11300.getInformation();

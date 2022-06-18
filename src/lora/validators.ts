@@ -21,7 +21,7 @@ export function validateCommand(
     model: LoraModels = LoraModels.RAK811
 ) {
     if (data.length > 0) {
-        console.log('validate Data', data);
+        // console.log('validate Data', data);
         validateOrThrowError(data, errorMessage, model);
         for (const response of data) {
             if (response.toLowerCase().startsWith('ok')) {

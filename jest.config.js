@@ -3,13 +3,18 @@ module.exports = {
     testEnvironment: 'jest-environment-node',
     coverageDirectory: './coverage/',
     collectCoverage: true,
-    collectCoverageFrom: ['src/**/*.ts', '!src/index.ts', '!src/cli.ts'],
+    collectCoverageFrom: [
+        'src/**/*.ts',
+        '!src/index.ts',
+        '!src/cli.ts',
+        '!src/serialports/**'
+    ],
     coverageThreshold: {
         global: {
-            statements: 90,
-            branches: 60,
-            functions: 90,
-            lines: 80
+            statements: 40,
+            branches: 40,
+            functions: 40,
+            lines: 40
         }
     },
     watchPlugins: [
