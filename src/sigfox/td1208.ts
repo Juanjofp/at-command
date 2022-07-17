@@ -1,5 +1,5 @@
-import type { ATSerialPort } from '@/serialports';
-import { CommandRunner, CommandRunnerBuilder } from '@/command-runner';
+import type { ATSerialPort } from '../serialports';
+import { CommandRunner, CommandRunnerBuilder } from '../command-runner';
 
 export type SigfoxDeps = {
     runner?: CommandRunner;
@@ -68,7 +68,7 @@ export function buildTD1208(
         });
     }
     function parseSendResponse(data: string[]) {
-        console.log(data);
+        // console.log(data);
         validateOrThrowError(data);
         return data.some(line => line.toLowerCase().startsWith('ok'));
     }
@@ -83,7 +83,7 @@ export function buildTD1208(
     }
 
     function parseSendResponseAndWait(data: string[]) {
-        console.log(data);
+        // console.log(data);
         validateOrThrowError(data);
         return data.some(line => line.toLowerCase().startsWith('+rx end'));
     }
@@ -100,7 +100,7 @@ export function buildTD1208(
         const response = await runner.runCommand(() =>
             runSendDataCommandAndWait(data, timeout)
         );
-        console.log(response.data);
+        // console.log(response.data);
         return response.data;
     }
     return {
