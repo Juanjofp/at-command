@@ -3,7 +3,7 @@ import {
     CommandRunnerBuilder,
     RunCommandTimeoutError
 } from '@/index';
-import { CommandRunnerBuilderMock } from '@/mocks';
+import { buildCommandRunnerMock } from '@/mocks';
 jest.setTimeout(50000);
 const serialPath = '/dev/tty.usbmodem214301';
 
@@ -181,8 +181,9 @@ describe.skip('command-runner', () => {
 });
 
 describe('command-runner Mock', () => {
+    const commandRunnerMock = buildCommandRunnerMock();
     beforeEach(() => {
-        CommandRunnerBuilderMock.mockClear();
+        commandRunnerMock.mockClear();
     });
 
     it('should return a list of SerialPorts', async () => {
@@ -195,24 +196,24 @@ describe('command-runner Mock', () => {
                 productId: '0043'
             }
         ];
-        CommandRunnerBuilderMock.mockGetSerialPortList(expectedList);
-        const list = await CommandRunnerBuilderMock.getSerialPortList();
+        commandRunnerMock.mockGetSerialPortList(expectedList);
+        const list = await commandRunnerMock.getSerialPortList();
         expect(list).toEqual(expectedList);
     });
 
     it('should return an EMPTY list of SerialPorts', async () => {
-        CommandRunnerBuilderMock.mockGetSerialPortList([]);
-        const list = await CommandRunnerBuilderMock.getSerialPortList();
+        commandRunnerMock.mockGetSerialPortList([]);
+        const list = await commandRunnerMock.getSerialPortList();
         expect(list).toEqual([]);
     });
 
     it('should return a closed serial port', async () => {
-        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
+        const port = await commandRunnerMock.buildSerialPort(serialPath);
         expect(port.isOpen()).toBe(false);
     });
 
     it('should open and close a serialport', async () => {
-        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
+        const port = await commandRunnerMock.buildSerialPort(serialPath);
         expect(port.isOpen()).toBe(false);
         await port.open();
         expect(port.isOpen()).toBe(true);
@@ -223,13 +224,13 @@ describe('command-runner Mock', () => {
     it('should throw an exception with invalid path', async () => {
         expect.assertions(1);
         const invalidPath = '/invalid/path';
-        CommandRunnerBuilderMock.mockCreateSerialPortThrowError(
+        commandRunnerMock.mockCreateSerialPortThrowError(
             new Error(
                 `Error: No such file or directory, cannot open ${invalidPath}`
             )
         );
         try {
-            await CommandRunnerBuilderMock.buildSerialPort(invalidPath);
+            await commandRunnerMock.buildSerialPort(invalidPath);
         } catch (error) {
             if (error instanceof Error) {
                 expect(error.message).toBe(
@@ -240,9 +241,9 @@ describe('command-runner Mock', () => {
     });
 
     it('should run a command and get response', async () => {
-        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
-        const runner = CommandRunnerBuilderMock.buildCommandRunner(port);
-        CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
+        const port = await commandRunnerMock.buildSerialPort(serialPath);
+        const runner = commandRunnerMock.buildCommandRunner(port);
+        commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
         try {
             await runner.open();
             const response = await runner.executeCommand('at+version', {
@@ -259,8 +260,8 @@ describe('command-runner Mock', () => {
 
     it('should throw an error if not respond in 3 seconds', async () => {
         expect.assertions(1);
-        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
-        const runner = CommandRunnerBuilderMock.buildCommandRunner(port);
+        const port = await commandRunnerMock.buildSerialPort(serialPath);
+        const runner = commandRunnerMock.buildCommandRunner(port);
 
         try {
             await runner.open();
@@ -278,9 +279,9 @@ describe('command-runner Mock', () => {
 
     it('should throw an error if not validation match', async () => {
         expect.assertions(3);
-        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
-        const runner = CommandRunnerBuilderMock.buildCommandRunner(port);
-        CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
+        const port = await commandRunnerMock.buildSerialPort(serialPath);
+        const runner = commandRunnerMock.buildCommandRunner(port);
+        commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
 
         try {
             await runner.open();
@@ -302,9 +303,9 @@ describe('command-runner Mock', () => {
     });
 
     it('should run a set of commands and get responses', async () => {
-        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
+        const port = await commandRunnerMock.buildSerialPort(serialPath);
         const runner = CommandRunnerBuilder.buildCommandRunner(port);
-        CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
+        commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
 
         const responses = await runner.runCommands([
             () => runner.executeCommand('at+version', { timeout: 500 }),
@@ -330,9 +331,9 @@ describe('command-runner Mock', () => {
 
     it('should run a set of commands and catch errors', async () => {
         expect.assertions(1);
-        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
+        const port = await commandRunnerMock.buildSerialPort(serialPath);
         const runner = CommandRunnerBuilder.buildCommandRunner(port);
-        CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
+        commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
 
         try {
             await runner.runCommands([
@@ -348,9 +349,9 @@ describe('command-runner Mock', () => {
     });
 
     it('should run a complex command and get response', async () => {
-        CommandRunnerBuilderMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
-        const port = await CommandRunnerBuilderMock.buildSerialPort(serialPath);
-        const runner = CommandRunnerBuilderMock.buildCommandRunner(port);
+        commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
+        const port = await commandRunnerMock.buildSerialPort(serialPath);
+        const runner = commandRunnerMock.buildCommandRunner(port);
 
         const complexCommand = async function () {
             const resp1 = await runner.executeCommand('at+version', {
