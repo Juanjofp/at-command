@@ -5,7 +5,7 @@ import {
     WriteValues,
     CommandRunnerBuilder,
     ATSerialPortBuilder
-} from '@/index';
+} from '../';
 
 export type CommandRunnerBuilderMock = {
     mockClear(): void;
