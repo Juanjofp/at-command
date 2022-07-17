@@ -2,9 +2,9 @@ import {
     ATSerialPort,
     ATSerialPortBuilder,
     LoraResponseError,
-    Rak811
+    Rak811,
+    CommandRunnerBuilderMock
 } from '@/index';
-import { CommandRunnerBuilderMock } from '@/mocks';
 
 const serialPath = '/dev/tty.usbmodem214301';
 jest.setTimeout(60000);
