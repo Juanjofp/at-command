@@ -1,5 +1,5 @@
-import { buildNodeSerialport } from '@/serialports/build-node-serialport';
-import { getSerialPortList } from '@/serialports/list-serialport';
+import { buildNodeSerialport } from './build-node-serialport';
+import { getSerialPortList } from './list-serialport';
 
 export const ATSerialPortBuilder = {
     buildSerialPort: buildNodeSerialport,
