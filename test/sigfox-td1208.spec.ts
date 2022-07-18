@@ -1,4 +1,5 @@
 import { buildCommandRunnerMock, TD1208 } from '@/index';
+import { defaultLogger } from '@/logger';
 
 const serialPath = '/dev/tty.usbmodem214301';
 jest.setTimeout(50000);
@@ -11,7 +12,7 @@ describe('Sigfox TD1208', () => {
         const serialPort = await commandRunnerMock.buildSerialPort(serialPath, {
             baudRate: 9600
         });
-        td1208 = TD1208.buildTD1208(serialPort);
+        td1208 = TD1208.buildTD1208(serialPort, { logger: defaultLogger });
     });
 
     it('should get its version', async () => {

@@ -1,6 +1,7 @@
-import { ATSerialPort } from '@/serialports';
-import { CommandRunnerBuilder, CommandResult } from '@/command-runner';
+import { ATSerialPort } from '../serialports';
+import { CommandRunnerBuilder, CommandResult } from '../command-runner';
 import { LoraDeps } from './models';
+import { silentLogger } from '../logger';
 import {
     trimValue,
     validateCommand,
@@ -10,7 +11,11 @@ import {
 export function buildRak811(
     serialPort: ATSerialPort,
     {
-        runner = CommandRunnerBuilder.buildCommandRunner(serialPort),
+        logger = silentLogger,
+        runner = CommandRunnerBuilder.buildCommandRunner({
+            serialPort,
+            logger
+        }),
         commandTimeout = 3000
     }: LoraDeps = {}
 ) {

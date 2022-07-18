@@ -1,6 +1,8 @@
-import { CommandRunner } from '@/command-runner';
+import { CommandRunner } from '../command-runner';
+import { Logger } from '../logger';
 
 export type LoraDeps = {
+    logger?: Logger;
     runner?: CommandRunner;
     commandTimeout?: number;
 };

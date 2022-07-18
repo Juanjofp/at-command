@@ -2,6 +2,7 @@ import { CommandRunnerBuilder, ATSerialPort, CommandResult } from '@/index';
 import { LoraDeps, LoraModels } from './models';
 import { validateCommand } from './validators';
 import { runWithRetryDelayed } from '@/utils';
+import { silentLogger } from '@/logger';
 
 function validateRak11300Command(data: string[]) {
     return validateCommand(data, '+cme error', LoraModels.RAK11300);
@@ -57,7 +58,11 @@ function parseInformation({ data }: CommandResult) {
 export function buildRak11300(
     serialPort: ATSerialPort,
     {
-        runner = CommandRunnerBuilder.buildCommandRunner(serialPort),
+        logger = silentLogger,
+        runner = CommandRunnerBuilder.buildCommandRunner({
+            serialPort,
+            logger
+        }),
         commandTimeout = 3000
     }: LoraDeps = {}
 ) {

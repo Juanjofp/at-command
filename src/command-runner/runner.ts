@@ -5,6 +5,7 @@ import {
 } from './models';
 import { Transform } from 'stream';
 import { ATSerialPort } from '../serialports';
+import { Logger, silentLogger } from '../logger';
 
 function defaultValidationPredicate(result: string[]): boolean {
     return result.some(line => line.toLowerCase().startsWith('ok'));
@@ -49,8 +50,14 @@ async function executeCommandAndWaitResponse(
         }, timeout);
     });
 }
-
-export function buildCommandRunner(serialPort: ATSerialPort) {
+export type BuildCommandRunnerDeps = {
+    serialPort: ATSerialPort;
+    logger?: Logger;
+};
+export function buildCommandRunner({
+    serialPort,
+    logger = silentLogger
+}: BuildCommandRunnerDeps) {
     async function open() {
         await serialPort.open();
     }
@@ -59,6 +66,7 @@ export function buildCommandRunner(serialPort: ATSerialPort) {
     }
 
     async function executeCommand(cmd: string, options: ExecutionOptions = {}) {
+        logger.info('Execute Command', cmd, 'with', `${options}`);
         const command = async () => {
             return await serialPort.write(cmd + '\r\n');
         };
