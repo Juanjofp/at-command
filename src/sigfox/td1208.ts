@@ -7,6 +7,41 @@ export type SigfoxDeps = {
     runner?: CommandRunner;
     commandTimeout?: number;
 };
+function parseVersion(data: string[]) {
+    if (data.length !== 3 || !data[1])
+        throw new Error(`Invalid version received ${data[1]}`);
+    return data[1];
+}
+
+function parseInformation(data: string[]) {
+    const model = data[1];
+    const hardwareVersion = data[2].split(':')[1].trim();
+    const softwareVersion = data[3].split(':')[1].trim();
+    const deviceId = data[4].split(':')[1].trim();
+    const serialNumber = data[5].split(':')[1].trim();
+
+    const values = data[7].split(' ');
+    const freq = values.find(v => v.startsWith('S403'));
+    let region = 'EU';
+    if (freq) {
+        const freqValue = freq.split(':')[1];
+        if (freqValue.startsWith('8')) {
+            region = 'EU868';
+        } else {
+            region = 'US915';
+        }
+    }
+
+    return {
+        model,
+        hardwareVersion,
+        softwareVersion,
+        deviceId,
+        serialNumber,
+        region
+    };
+}
+
 export function buildTD1208(
     serialPort: ATSerialPort,
     {
@@ -24,40 +59,17 @@ export function buildTD1208(
                 timeout: commandTimeout
             });
 
-        const response = await runner.runCommand(command);
-        console.log(response);
-        logger.info('Get version');
-        return response.data[1];
-    }
-
-    function parseInformation(data: string[]) {
-        const model = data[1];
-        const hardwareVersion = data[2].split(':')[1].trim();
-        const softwareVersion = data[3].split(':')[1].trim();
-        const deviceId = data[4].split(':')[1].trim();
-        const serialNumber = data[5].split(':')[1].trim();
-
-        const values = data[7].split(' ');
-        const freq = values.find(v => v.startsWith('S403'));
-        let region = 'EU';
-        if (freq) {
-            const freqValue = freq.split(':')[1];
-            if (freqValue.startsWith('8')) {
-                region = 'EU868';
-            } else {
-                region = 'US915';
-            }
+        try {
+            const response = await runner.runCommand(command);
+            const version = parseVersion(response.data);
+            logger.info('Get version', version);
+            return version;
+        } catch (error) {
+            logger.error('[Sigfox TD1208]', 'getVersion (ati5)', `${error}`);
+            throw new Error('Cannot get version');
         }
-
-        return {
-            model,
-            hardwareVersion,
-            softwareVersion,
-            deviceId,
-            serialNumber,
-            region
-        };
     }
+
     async function runInformationCommand() {
         return runner.executeCommand('AT&V', {
             timeout: commandTimeout

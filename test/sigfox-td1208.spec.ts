@@ -1,5 +1,4 @@
-import { buildCommandRunnerMock, TD1208 } from '@/index';
-import { defaultLogger } from '@/log-service';
+import { buildCommandRunnerMock, defaultLogger, TD1208 } from '@/index';
 
 const serialPath = '/dev/tty.usbmodem214301';
 jest.setTimeout(50000);
@@ -16,18 +15,16 @@ describe('Sigfox TD1208', () => {
     });
 
     it('should get its version', async () => {
-        commandRunnerMock.mockReadFromSerialPortOnce([
-            'ati5\r',
-            'M10+2015',
-            'OK'
-        ]);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateVersion('TD1208')
+        );
 
         const version = await td1208.getVersion();
 
         expect(version).toBe('M10+2015');
     });
 
-    it.skip('should fails if serial port not responding', async () => {
+    it('should fails if serial port not responding', async () => {
         expect.assertions(1);
         commandRunnerMock.mockCreateSerialPortThrowError(
             new Error('Cannot open fake port')
@@ -39,12 +36,32 @@ describe('Sigfox TD1208', () => {
         }
     });
 
-    it.skip('should get configuration info', async () => {
-        commandRunnerMock.mockReadFromSerialPortOnce([
-            'ati5\r',
-            'M10+2015',
-            'OK'
-        ]);
+    it('should fails if serial port responding invalid data', async () => {
+        expect.assertions(1);
+        commandRunnerMock.mockReadFromSerialPortOnce(['INVALID', 'STREAMS']);
+        try {
+            await td1208.getVersion();
+        } catch (error) {
+            expect(error).toEqual(new Error(`Cannot get version`));
+        }
+    });
+
+    it('should fails if serial port responding valid data but not version included', async () => {
+        expect.assertions(1);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('TD1208')
+        );
+        try {
+            await td1208.getVersion();
+        } catch (error) {
+            expect(error).toEqual(new Error(`Cannot get version`));
+        }
+    });
+
+    it('should get configuration info', async () => {
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateInfo('TD1208')
+        );
 
         const info = await td1208.getInformation();
 

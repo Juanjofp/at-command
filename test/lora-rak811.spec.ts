@@ -175,6 +175,7 @@ describe('Mock LoRa rak811', () => {
     let rak811: Rak811.LoraRak811;
     let atPort: ATSerialPort;
     const commandRunnerMock = buildCommandRunnerMock();
+    const infoData = commandRunnerMock.mockGenerateInfo('RAK811');
     beforeAll(async () => {
         atPort = await commandRunnerMock.buildSerialPort(serialPath);
         rak811 = Rak811.buildRak811(atPort, { commandTimeout: 500 });
@@ -185,7 +186,9 @@ describe('Mock LoRa rak811', () => {
     });
 
     it('should get its version', async () => {
-        commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
+        commandRunnerMock.mockReadFromSerialPort(
+            commandRunnerMock.mockGenerateVersion('RAK811')
+        );
 
         const version = await rak811.getVersion();
         expect(version).toEqual('V3.0.0.14.H');
@@ -204,34 +207,6 @@ describe('Mock LoRa rak811', () => {
             expect(atPort.isOpen()).toBe(false);
         }
     });
-
-    const infoData = [
-        'OK Work Mode: LoRaWAN',
-        'Region: EU868',
-        'MulticastEnable: false',
-        'DutycycleEnable: false',
-        'Send_repeat_cnt: 0',
-        'Join_mode: OTAA',
-        'DevEui: AC1F09FFFE04891A',
-        'AppEui: AC1F09FFF8680811',
-        'AppKey: AC1F09FFFE04891AAC1F09FFF8680811',
-        'Class: A',
-        'Joined Network:false',
-        'IsConfirm: unconfirm',
-        'AdrEnable: true',
-        'EnableRepeaterSupport: false',
-        'RX2_CHANNEL_FREQUENCY: 869525000, RX2_CHANNEL_DR:0',
-        'RX_WINDOW_DURATION: 3000ms',
-        'RECEIVE_DELAY_1: 1000ms',
-        'RECEIVE_DELAY_2: 2000ms',
-        'JOIN_ACCEPT_DELAY_1: 5000ms',
-        'JOIN_ACCEPT_DELAY_2: 6000ms',
-        'Current Datarate: 5',
-        'Primeval Datarate: 5',
-        'ChannelsTxPower: 0',
-        'UpLinkCounter: 0',
-        'DownLinkCounter: 0'
-    ];
 
     it('should get configuration info', async () => {
         commandRunnerMock.mockReadFromSerialPort(infoData);
@@ -266,7 +241,9 @@ describe('Mock LoRa rak811', () => {
 
     it('should set a valid device EUI', async () => {
         const devEui = 'AC1F09FFFE04891A';
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        );
         commandRunnerMock.mockReadFromSerialPort(infoData);
 
         await rak811.setDeviceEui(devEui);
@@ -277,7 +254,9 @@ describe('Mock LoRa rak811', () => {
     it('should set a invalid device EUI', async () => {
         expect.assertions(3);
         const devEui = 'AC1F09FFFE04891A';
-        commandRunnerMock.mockReadFromSerialPortOnce(['Error: 2']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('RAK811', 2)
+        );
         commandRunnerMock.mockReadFromSerialPort(infoData);
 
         try {
@@ -300,7 +279,9 @@ describe('Mock LoRa rak811', () => {
 
     it('should manage unknown error responses', async () => {
         expect.assertions(1);
-        commandRunnerMock.mockReadFromSerialPortOnce(['Error: 999']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('RAK811', 999)
+        );
 
         try {
             await rak811.setDeviceEui('invalid');
@@ -331,7 +312,9 @@ describe('Mock LoRa rak811', () => {
     it('should set a invalid APP EUI', async () => {
         expect.assertions(2);
         const appEui = 'AC1F09FFF8680811';
-        commandRunnerMock.mockReadFromSerialPortOnce(['Error: 2']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('RAK811', 2)
+        );
         commandRunnerMock.mockReadFromSerialPort(infoData);
 
         try {
@@ -349,7 +332,9 @@ describe('Mock LoRa rak811', () => {
 
     it('should set a valid APP EUI', async () => {
         const appEui = 'AC1F09FFF8680811';
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        );
         commandRunnerMock.mockReadFromSerialPort(infoData);
 
         await rak811.setAppEui(appEui);
@@ -360,7 +345,9 @@ describe('Mock LoRa rak811', () => {
     it('should set a invalid App Key', async () => {
         expect.assertions(2);
         const appKey = 'AC1F09FFFE04891AAC1F09FFF8680811';
-        commandRunnerMock.mockReadFromSerialPortOnce(['Error: 2']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('RAK811', 2)
+        );
         commandRunnerMock.mockReadFromSerialPort(infoData);
 
         try {
@@ -377,7 +364,9 @@ describe('Mock LoRa rak811', () => {
     });
 
     it('should set a valid APP EUI', async () => {
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        );
         commandRunnerMock.mockReadFromSerialPort(infoData);
         const appKey = 'AC1F09FFFE04891AAC1F09FFF8680811';
 
@@ -389,14 +378,18 @@ describe('Mock LoRa rak811', () => {
 
     it('should join successfully', async () => {
         commandRunnerMock.mockReadFromSerialPortOnce(infoData);
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK Join Success']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateJoinSuccess('RAK811')
+        );
 
         await rak811.join();
     });
 
     it('should join twice successfully', async () => {
         commandRunnerMock.mockReadFromSerialPortOnce(infoData);
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK Join Success']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateJoinSuccess('RAK811')
+        );
         const joinedState = infoData.slice();
         joinedState[10] = 'Joined Network:true';
         commandRunnerMock.mockReadFromSerialPortOnce(joinedState);
@@ -408,7 +401,9 @@ describe('Mock LoRa rak811', () => {
     it('should fail when join fails', async () => {
         expect.assertions(1);
         commandRunnerMock.mockReadFromSerialPortOnce(infoData);
-        commandRunnerMock.mockReadFromSerialPortOnce(['Error: 99']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('RAK811', 99)
+        );
 
         try {
             await rak811.join();
@@ -424,9 +419,13 @@ describe('Mock LoRa rak811', () => {
     it('should change message confirmation', async () => {
         const modifiedInfoData = infoData.slice();
         modifiedInfoData[11] = 'IsConfirm: confirm';
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        );
         commandRunnerMock.mockReadFromSerialPortOnce(modifiedInfoData);
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        );
         commandRunnerMock.mockReadFromSerialPortOnce(infoData);
 
         await rak811.setNeedsConfirmation(true);
@@ -443,8 +442,12 @@ describe('Mock LoRa rak811', () => {
     it('should send an unconfirmed frame to gateway', async () => {
         commandRunnerMock.mockReadFromSerialPortOnce(infoData); // info
         commandRunnerMock.mockReadFromSerialPortOnce(infoData); // join check status
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK ']); // join
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK ']); // send data
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        ); // join
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        ); // send data
 
         await rak811.sendUnconfirmedData('0102030405060708');
     });
@@ -452,8 +455,12 @@ describe('Mock LoRa rak811', () => {
     it('should send a confirmed frame to gateway', async () => {
         commandRunnerMock.mockReadFromSerialPortOnce(infoData); // info
         commandRunnerMock.mockReadFromSerialPortOnce(infoData); // join check status
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK ']); // join
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK ']); // confirmed
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        ); // join
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        ); // confirmed
         commandRunnerMock.mockReadFromSerialPortOnce([
             'OK ',
             'at+recv=1,-50,7,0'
@@ -474,9 +481,15 @@ describe('Mock LoRa rak811', () => {
         expect.assertions(1);
         commandRunnerMock.mockReadFromSerialPortOnce(infoData); // info
         commandRunnerMock.mockReadFromSerialPortOnce(infoData); // join check status
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK ']); // join
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK ']); // confirmed
-        commandRunnerMock.mockReadFromSerialPortOnce(['ERROR: 96']);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        ); // join
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        ); // confirmed
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('RAK811', 96)
+        );
         // Response send data [ 'ERROR: 96' ]
 
         try {
@@ -493,11 +506,12 @@ describe('Mock LoRa rak811', () => {
     it('should send an unconfirmed frame to gateway and receive response', async () => {
         commandRunnerMock.mockReadFromSerialPortOnce(infoData); // info
         commandRunnerMock.mockReadFromSerialPortOnce(infoData); // join check status
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK ']); // join
-        commandRunnerMock.mockReadFromSerialPortOnce([
-            'OK ',
-            'at+recv=1,-50,7,3:030405'
-        ]);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        ); // join
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateDataReceived('RAK811', '030405')
+        );
 
         const response = await rak811.sendUnconfirmedDataAndWaitForResponse(
             '0102030405060708'
@@ -513,12 +527,15 @@ describe('Mock LoRa rak811', () => {
     it('should send an confirmed frame to gateway and receive response', async () => {
         commandRunnerMock.mockReadFromSerialPortOnce(infoData); // info
         commandRunnerMock.mockReadFromSerialPortOnce(infoData); // join check status
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK ']); // join
-        commandRunnerMock.mockReadFromSerialPortOnce(['OK ']); // confirmed
-        commandRunnerMock.mockReadFromSerialPortOnce([
-            'OK ',
-            'at+recv=1,-50,7,4:03040509'
-        ]);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        ); // join
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK811')
+        ); // confirmed
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateDataReceived('RAK811', '03040509')
+        );
 
         const response = await rak811.sendConfirmedDataAndWaitForResponse(
             '0102030405060708'

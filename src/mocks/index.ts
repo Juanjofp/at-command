@@ -6,6 +6,21 @@ import {
     CommandRunnerBuilder,
     ATSerialPortBuilder
 } from '../';
+import {
+    errorResponseRAK811,
+    infoDataRAK811,
+    infoDataTD1208,
+    receivedDataRAK811,
+    validJOINRAK811,
+    validResponseRAK811,
+    versionRAK811,
+    versionTD1208
+} from './data';
+
+export type DeviceModel = 'RAK811' | 'RAK11300' | 'TD1208';
+type ErrorInDevice<T extends DeviceModel> = T extends 'RAK811'
+    ? number
+    : string;
 
 export type CommandRunnerBuilderMock = {
     mockClear(): void;
@@ -13,6 +28,15 @@ export type CommandRunnerBuilderMock = {
     mockCreateSerialPortThrowError(error: Error): void;
     mockReadFromSerialPort(data: string[]): void;
     mockReadFromSerialPortOnce(data: string[]): void;
+    mockGenerateInfo(device: DeviceModel): string[];
+    mockGenerateVersion(device: DeviceModel): string[];
+    mockGenerateValidResponse(device: DeviceModel): string[];
+    mockGenerateError<T extends DeviceModel>(
+        device: T,
+        error: ErrorInDevice<T>
+    ): string[];
+    mockGenerateJoinSuccess(device: DeviceModel): string[];
+    mockGenerateDataReceived(device: DeviceModel, data: string): string[];
 } & CommandRunnerBuilder &
     ATSerialPortBuilder;
 
@@ -83,12 +107,56 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
         mockResponse = [];
     }
 
+    function mockGenerateInfo(device: DeviceModel) {
+        if (device === 'RAK811') return infoDataRAK811;
+        if (device === 'TD1208') return infoDataTD1208;
+        return ['', ''];
+    }
+
+    function mockGenerateVersion(device: DeviceModel) {
+        if (device === 'RAK811') return versionRAK811;
+        if (device === 'TD1208') return versionTD1208;
+        return ['', ''];
+    }
+
+    function mockGenerateValidResponse(device: DeviceModel) {
+        if (device === 'RAK811') return validResponseRAK811;
+        if (device === 'TD1208') return validResponseRAK811;
+        return ['', ''];
+    }
+
+    function mockGenerateError<T extends DeviceModel>(
+        device: T,
+        error: ErrorInDevice<T>
+    ) {
+        if (device === 'RAK811') {
+            return errorResponseRAK811(+error);
+        }
+        return ['', ''];
+    }
+
+    function mockGenerateJoinSuccess(device: DeviceModel) {
+        if (device === 'RAK811') return validJOINRAK811;
+        return ['', ''];
+    }
+
+    function mockGenerateDataReceived(device: DeviceModel, data: string) {
+        if (device === 'RAK811') return receivedDataRAK811(data);
+        return ['', ''];
+    }
+
     return {
         mockClear,
         mockGetSerialPortList,
         mockCreateSerialPortThrowError,
         mockReadFromSerialPort,
         mockReadFromSerialPortOnce,
+        mockGenerateInfo,
+        mockGenerateVersion,
+        mockGenerateValidResponse,
+        mockGenerateError,
+        mockGenerateJoinSuccess,
+        mockGenerateDataReceived,
         getSerialPortList: () => Promise.resolve(serialPortList),
         buildSerialPort,
         buildCommandRunner: CommandRunnerBuilder.buildCommandRunner

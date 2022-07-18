@@ -8,7 +8,8 @@ module.exports = {
         'src/**/*.ts',
         '!src/index.ts',
         '!src/cli.ts',
-        '!src/serialports/**'
+        '!src/serialports/**',
+        '!src/mocks/**'
     ],
     coverageThreshold: {
         global: {
