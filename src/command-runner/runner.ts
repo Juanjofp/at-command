@@ -5,7 +5,7 @@ import {
 } from './models';
 import { Transform } from 'stream';
 import { ATSerialPort } from '../serialports';
-import { Logger, silentLogger } from '../logger';
+import { Logger, silentLogger } from '../log-service';
 
 function defaultValidationPredicate(result: string[]): boolean {
     return result.some(line => line.toLowerCase().startsWith('ok'));
@@ -66,7 +66,7 @@ export function buildCommandRunner({
     }
 
     async function executeCommand(cmd: string, options: ExecutionOptions = {}) {
-        logger.info('Execute Command', cmd, 'with', `${options}`);
+        logger.info('Execute Command', cmd);
         const command = async () => {
             return await serialPort.write(cmd + '\r\n');
         };

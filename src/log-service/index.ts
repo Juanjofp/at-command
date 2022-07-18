@@ -1,9 +1,9 @@
 export const defaultLogger = {
-    info(...args: string[]) {
-        console.log('Info: ', ...args);
+    info: (...args: string[]) => {
+        console.log('<Info>', ...args);
     },
-    error(...args: string[]) {
-        console.log('Error: ', ...args);
+    error: (...args: string[]) => {
+        console.log('<Error>', ...args);
     }
 };
 

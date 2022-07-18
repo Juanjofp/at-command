@@ -1,5 +1,5 @@
 import { CommandRunner } from '../command-runner';
-import { Logger } from '../logger';
+import { Logger } from '../log-service';
 
 export type LoraDeps = {
     logger?: Logger;

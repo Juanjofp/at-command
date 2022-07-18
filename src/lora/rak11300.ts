@@ -1,8 +1,8 @@
 import { CommandRunnerBuilder, ATSerialPort, CommandResult } from '@/index';
 import { LoraDeps, LoraModels } from './models';
 import { validateCommand } from './validators';
-import { runWithRetryDelayed } from '@/utils';
-import { silentLogger } from '@/logger';
+import { runWithRetryDelayed } from '../utils';
+import { silentLogger } from '../log-service';
 
 function validateRak11300Command(data: string[]) {
     return validateCommand(data, '+cme error', LoraModels.RAK11300);

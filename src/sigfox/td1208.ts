@@ -1,11 +1,11 @@
 import type { ATSerialPort } from '../serialports';
 import { CommandRunner, CommandRunnerBuilder } from '../command-runner';
-import { Logger, silentLogger } from '../logger';
+import { Logger, silentLogger } from '../log-service';
 
 export type SigfoxDeps = {
+    logger?: Logger;
     runner?: CommandRunner;
     commandTimeout?: number;
-    logger?: Logger;
 };
 export function buildTD1208(
     serialPort: ATSerialPort,
@@ -25,6 +25,8 @@ export function buildTD1208(
             });
 
         const response = await runner.runCommand(command);
+        console.log(response);
+        logger.info('Get version');
         return response.data[1];
     }
 

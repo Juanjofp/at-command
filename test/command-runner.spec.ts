@@ -78,7 +78,9 @@ describe.skip('command-runner', () => {
 
     it('should run a command and get response', async () => {
         const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
-        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+        const runner = CommandRunnerBuilder.buildCommandRunner({
+            serialPort: port
+        });
 
         try {
             await runner.open();
@@ -97,7 +99,9 @@ describe.skip('command-runner', () => {
         const port = await ATSerialPortBuilder.buildSerialPort(serialPath, {
             baudRate: 9600
         });
-        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+        const runner = CommandRunnerBuilder.buildCommandRunner({
+            serialPort: port
+        });
 
         try {
             await runner.open();
@@ -116,7 +120,9 @@ describe.skip('command-runner', () => {
     it('should throw an error if not validation match', async () => {
         expect.assertions(3);
         const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
-        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+        const runner = CommandRunnerBuilder.buildCommandRunner({
+            serialPort: port
+        });
 
         try {
             await runner.open();
@@ -139,7 +145,9 @@ describe.skip('command-runner', () => {
 
     it('should run a set of commands and get responses', async () => {
         const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
-        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+        const runner = CommandRunnerBuilder.buildCommandRunner({
+            serialPort: port
+        });
 
         const responses = await runner.runCommands([
             () => runner.executeCommand('at+version'),
@@ -160,7 +168,9 @@ describe.skip('command-runner', () => {
 
     it('should run a complex command and get response', async () => {
         const port = await ATSerialPortBuilder.buildSerialPort(serialPath);
-        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+        const runner = CommandRunnerBuilder.buildCommandRunner({
+            serialPort: port
+        });
 
         const complexCommand = async function () {
             const resp1 = await runner.executeCommand('at+version');
@@ -241,8 +251,8 @@ describe('command-runner Mock', () => {
     });
 
     it('should run a command and get response', async () => {
-        const port = await commandRunnerMock.buildSerialPort(serialPath);
-        const runner = commandRunnerMock.buildCommandRunner(port);
+        const serialPort = await commandRunnerMock.buildSerialPort(serialPath);
+        const runner = commandRunnerMock.buildCommandRunner({ serialPort });
         commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
         try {
             await runner.open();
@@ -260,8 +270,8 @@ describe('command-runner Mock', () => {
 
     it('should throw an error if not respond in 3 seconds', async () => {
         expect.assertions(1);
-        const port = await commandRunnerMock.buildSerialPort(serialPath);
-        const runner = commandRunnerMock.buildCommandRunner(port);
+        const serialPort = await commandRunnerMock.buildSerialPort(serialPath);
+        const runner = commandRunnerMock.buildCommandRunner({ serialPort });
 
         try {
             await runner.open();
@@ -279,8 +289,8 @@ describe('command-runner Mock', () => {
 
     it('should throw an error if not validation match', async () => {
         expect.assertions(3);
-        const port = await commandRunnerMock.buildSerialPort(serialPath);
-        const runner = commandRunnerMock.buildCommandRunner(port);
+        const serialPort = await commandRunnerMock.buildSerialPort(serialPath);
+        const runner = commandRunnerMock.buildCommandRunner({ serialPort });
         commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
 
         try {
@@ -304,7 +314,9 @@ describe('command-runner Mock', () => {
 
     it('should run a set of commands and get responses', async () => {
         const port = await commandRunnerMock.buildSerialPort(serialPath);
-        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+        const runner = CommandRunnerBuilder.buildCommandRunner({
+            serialPort: port
+        });
         commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
 
         const responses = await runner.runCommands([
@@ -332,7 +344,9 @@ describe('command-runner Mock', () => {
     it('should run a set of commands and catch errors', async () => {
         expect.assertions(1);
         const port = await commandRunnerMock.buildSerialPort(serialPath);
-        const runner = CommandRunnerBuilder.buildCommandRunner(port);
+        const runner = CommandRunnerBuilder.buildCommandRunner({
+            serialPort: port
+        });
         commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
 
         try {
@@ -350,8 +364,8 @@ describe('command-runner Mock', () => {
 
     it('should run a complex command and get response', async () => {
         commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
-        const port = await commandRunnerMock.buildSerialPort(serialPath);
-        const runner = commandRunnerMock.buildCommandRunner(port);
+        const serialPort = await commandRunnerMock.buildSerialPort(serialPath);
+        const runner = commandRunnerMock.buildCommandRunner({ serialPort });
 
         const complexCommand = async function () {
             const resp1 = await runner.executeCommand('at+version', {

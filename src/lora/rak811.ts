@@ -1,12 +1,12 @@
 import { ATSerialPort } from '../serialports';
 import { CommandRunnerBuilder, CommandResult } from '../command-runner';
 import { LoraDeps } from './models';
-import { silentLogger } from '../logger';
 import {
     trimValue,
     validateCommand,
     waitForReceivedValidation
 } from './validators';
+import { silentLogger } from '../log-service';
 
 export function buildRak811(
     serialPort: ATSerialPort,

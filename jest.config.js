@@ -3,6 +3,7 @@ module.exports = {
     testEnvironment: 'jest-environment-node',
     coverageDirectory: './coverage/',
     collectCoverage: true,
+    coverageProvider: 'v8',
     collectCoverageFrom: [
         'src/**/*.ts',
         '!src/index.ts',
