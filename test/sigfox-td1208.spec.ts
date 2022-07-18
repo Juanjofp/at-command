@@ -1,26 +1,50 @@
-import { ATSerialPortBuilder, TD1208 } from '@/index';
+import { buildCommandRunnerMock, TD1208 } from '@/index';
 
 const serialPath = '/dev/tty.usbmodem214301';
 jest.setTimeout(50000);
 
-describe.skip('LoRa TD1208', () => {
+describe('Sigfox TD1208', () => {
+    const commandRunnerMock = buildCommandRunnerMock();
     let td1208: TD1208.SigfoxTD1208;
-    beforeAll(async () => {
-        const serialPort = await ATSerialPortBuilder.buildSerialPort(
-            serialPath,
-            {
-                baudRate: 9600
-            }
-        );
+    beforeEach(async () => {
+        commandRunnerMock.mockClear();
+        const serialPort = await commandRunnerMock.buildSerialPort(serialPath, {
+            baudRate: 9600
+        });
         td1208 = TD1208.buildTD1208(serialPort);
     });
 
     it('should get its version', async () => {
+        commandRunnerMock.mockReadFromSerialPortOnce([
+            'ati5\r',
+            'M10+2015',
+            'OK'
+        ]);
+
         const version = await td1208.getVersion();
+
         expect(version).toBe('M10+2015');
     });
 
-    it('should get configuration info', async () => {
+    it('should fails if serial port not responding', async () => {
+        expect.assertions(1);
+        commandRunnerMock.mockCreateSerialPortThrowError(
+            new Error('Cannot open fake port')
+        );
+        try {
+            await td1208.getVersion();
+        } catch (error) {
+            expect(error).toEqual(new Error(`Cannot get version`));
+        }
+    });
+
+    it.skip('should get configuration info', async () => {
+        commandRunnerMock.mockReadFromSerialPortOnce([
+            'ati5\r',
+            'M10+2015',
+            'OK'
+        ]);
+
         const info = await td1208.getInformation();
 
         expect(info.model).toEqual('Telecom Design TD1207');
@@ -31,11 +55,11 @@ describe.skip('LoRa TD1208', () => {
         expect(info.region).toEqual('EU868');
     });
 
-    it('should send a frame to backend', async () => {
+    it.skip('should send a frame to backend', async () => {
         await td1208.sendData('010203', { timeout: 5000 });
     });
 
-    it('should fail when send a invalid frame to backend', async () => {
+    it.skip('should fail when send a invalid frame to backend', async () => {
         expect.assertions(1);
         try {
             await td1208.sendData('JUANJO');
@@ -44,7 +68,7 @@ describe.skip('LoRa TD1208', () => {
         }
     });
 
-    it('should send a frame to backend and wait for response', async () => {
+    it.skip('should send a frame to backend and wait for response', async () => {
         const response = await td1208.sendDataAndWaitForResponse(
             '010203040506070809101112',
             {

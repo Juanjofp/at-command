@@ -4,7 +4,7 @@ import {
     RunCommandTimeoutError
 } from './models';
 import { Transform } from 'stream';
-import { ATSerialPort } from '@/serialports';
+import { ATSerialPort } from '../serialports';
 
 function defaultValidationPredicate(result: string[]): boolean {
     return result.some(line => line.toLowerCase().startsWith('ok'));
