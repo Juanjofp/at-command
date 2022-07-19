@@ -40,6 +40,7 @@ export const receivedDataRAK811 = (data = '030405') => [
     'OK ',
     `at+recv=1,-50,7,${data.length / 2}:${data}`
 ];
+export const receivedNODataRAK811 = ['OK ', `at+recv=1,-50,7,0`];
 
 export const versionTD1208 = ['ati5', 'M10+2015', 'OK'];
 
@@ -53,4 +54,20 @@ export const infoDataTD1208 = [
     'ACTIVE PROFILE',
     'E1 V1 Q0 X1 S200:0 S300:24 S301:2 S403:869700000 S404:14 S405:-95',
     'OK'
+];
+
+export const errorResponseTD1208 = ['AT$SF=010203', 'ERROR'];
+export const validResponseTD1208 = ['AT$SF=010203', 'OK'];
+export const receivedDataTD1208 = (data = '030405') => [
+    'AT$SF=010203040506070809101112,2,1\r',
+    'OK',
+    '+RX BEGIN',
+    '+RX=' + data,
+    '+RX END'
+];
+export const receivedNODataTD1208 = [
+    'AT$SF=010203040506070809101112,2,1\r',
+    'OK',
+    '+RX BEGIN',
+    '+RX END'
 ];

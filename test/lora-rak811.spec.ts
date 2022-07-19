@@ -178,7 +178,7 @@ describe('Mock LoRa rak811', () => {
     const infoData = commandRunnerMock.mockGenerateInfo('RAK811');
     beforeAll(async () => {
         atPort = await commandRunnerMock.buildSerialPort(serialPath);
-        rak811 = Rak811.buildRak811(atPort, { commandTimeout: 500 });
+        rak811 = Rak811.buildRak811(atPort, { commandTimeout: 250 });
     });
 
     beforeEach(async () => {
@@ -461,16 +461,15 @@ describe('Mock LoRa rak811', () => {
         commandRunnerMock.mockReadFromSerialPortOnce(
             commandRunnerMock.mockGenerateValidResponse('RAK811')
         ); // confirmed
-        commandRunnerMock.mockReadFromSerialPortOnce([
-            'OK ',
-            'at+recv=1,-50,7,0'
-        ]);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateNODataReceived('RAK811')
+        );
 
         const response = await rak811.sendConfirmedData('01020304', {
             timeout: 500
         });
 
-        expect(response.data).toEqual(undefined);
+        expect(response.data).toEqual([]);
         expect(response.dataSize).toEqual(0);
         expect(response.port).toEqual(1);
         expect(response.rssi).toEqual(-50);
@@ -517,7 +516,7 @@ describe('Mock LoRa rak811', () => {
             '0102030405060708'
         );
 
-        expect(response.data).toEqual('030405');
+        expect(response.data).toEqual([0x03, 0x04, 0x05]);
         expect(response.dataSize).toEqual(3);
         expect(response.port).toEqual(1);
         expect(response.rssi).toEqual(-50);
@@ -541,7 +540,7 @@ describe('Mock LoRa rak811', () => {
             '0102030405060708'
         );
 
-        expect(response.data).toEqual('03040509');
+        expect(response.data).toEqual([0x03, 0x04, 0x05, 0x09]);
         expect(response.dataSize).toEqual(4);
         expect(response.port).toEqual(1);
         expect(response.rssi).toEqual(-50);

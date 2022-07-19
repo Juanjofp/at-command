@@ -1,4 +1,4 @@
-import { buildCommandRunnerMock, defaultLogger, TD1208 } from '@/index';
+import { buildCommandRunnerMock, TD1208 } from '@/index';
 
 const serialPath = '/dev/tty.usbmodem214301';
 jest.setTimeout(50000);
@@ -11,7 +11,9 @@ describe('Sigfox TD1208', () => {
         const serialPort = await commandRunnerMock.buildSerialPort(serialPath, {
             baudRate: 9600
         });
-        td1208 = TD1208.buildTD1208(serialPort, { logger: defaultLogger });
+        td1208 = TD1208.buildTD1208(serialPort, {
+            commandTimeout: 100
+        });
     });
 
     it('should get its version', async () => {
@@ -24,7 +26,7 @@ describe('Sigfox TD1208', () => {
         expect(version).toBe('M10+2015');
     });
 
-    it('should fails if serial port not responding', async () => {
+    it('should fails if serial port not responding getting version', async () => {
         expect.assertions(1);
         commandRunnerMock.mockCreateSerialPortThrowError(
             new Error('Cannot open fake port')
@@ -36,7 +38,7 @@ describe('Sigfox TD1208', () => {
         }
     });
 
-    it('should fails if serial port responding invalid data', async () => {
+    it('should fails if serial port responding invalid data getting version', async () => {
         expect.assertions(1);
         commandRunnerMock.mockReadFromSerialPortOnce(['INVALID', 'STREAMS']);
         try {
@@ -50,6 +52,18 @@ describe('Sigfox TD1208', () => {
         expect.assertions(1);
         commandRunnerMock.mockReadFromSerialPortOnce(
             commandRunnerMock.mockGenerateValidResponse('TD1208')
+        );
+        try {
+            await td1208.getVersion();
+        } catch (error) {
+            expect(error).toEqual(new Error(`Cannot get version`));
+        }
+    });
+
+    it('should fails if serial port responding error getting version', async () => {
+        expect.assertions(1);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('TD1208')
         );
         try {
             await td1208.getVersion();
@@ -73,63 +87,221 @@ describe('Sigfox TD1208', () => {
         expect(info.region).toEqual('EU868');
     });
 
-    it.skip('should send a frame to backend', async () => {
-        await td1208.sendData('010203', { timeout: 5000 });
-    });
-
-    it.skip('should fail when send a invalid frame to backend', async () => {
+    it('should fails if serial port not responding getting info', async () => {
         expect.assertions(1);
+        commandRunnerMock.mockCreateSerialPortThrowError(
+            new Error('Cannot open fake port')
+        );
         try {
-            await td1208.sendData('JUANJO');
+            await td1208.getInformation();
         } catch (error) {
-            expect(error).toEqual(new Error('Invalid command: AT$SF=JUANJO\r'));
+            expect(error).toEqual(new Error(`Cannot get information`));
         }
     });
 
-    it.skip('should send a frame to backend and wait for response', async () => {
-        const response = await td1208.sendDataAndWaitForResponse(
-            '010203040506070809101112',
-            {
-                timeout: 60000
+    it('should fails if serial port responding invalid data', async () => {
+        expect.assertions(1);
+        commandRunnerMock.mockReadFromSerialPortOnce(['INVALID', 'STREAMS']);
+        try {
+            await td1208.getInformation();
+        } catch (error) {
+            expect(error).toEqual(new Error(`Cannot get information`));
+        }
+    });
+
+    it('should fails if serial port responding valid data but not information included', async () => {
+        expect.assertions(1);
+        const info = commandRunnerMock.mockGenerateInfo('TD1208');
+        const fakeInfo = info.filter((line, index) => index % 2 == 0);
+        commandRunnerMock.mockReadFromSerialPortOnce(fakeInfo);
+
+        try {
+            await td1208.getInformation();
+        } catch (error) {
+            expect(error).toEqual(new Error(`Cannot get information`));
+        }
+    });
+
+    it('should fails if serial port responding error getting information', async () => {
+        expect.assertions(1);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('TD1208')
+        );
+        try {
+            await td1208.getInformation();
+        } catch (error) {
+            expect(error).toEqual(new Error(`Cannot get information`));
+        }
+    });
+
+    const validFrames = [
+        'ba',
+        'aabbccddeeff',
+        'AABBCCDDEEFF',
+        '1a2b3c4d5e6fF6E5D4C3B2A1',
+        '010203'
+    ];
+    it.each(validFrames)('should send the frame %s to backend', async frame => {
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('TD1208')
+        );
+        await td1208.sendData(frame, { timeout: 100 });
+    });
+
+    it('should fails if serial port responding error sending a frame', async () => {
+        expect.assertions(1);
+        const frame = '010203';
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('TD1208')
+        );
+        try {
+            await td1208.sendData(frame, { timeout: 100 });
+        } catch (error) {
+            expect(error).toEqual(
+                new Error(`Cannot send frame AT$SF=${frame}`)
+            );
+        }
+    });
+
+    it('should fails if serial port not respond', async () => {
+        expect.assertions(1);
+        const frame = '010203';
+        try {
+            await td1208.sendData(frame, { timeout: 100 });
+        } catch (error) {
+            expect(error).toEqual(
+                new Error(`Cannot send frame AT$SF=${frame}`)
+            );
+        }
+    });
+
+    const invalidFrames = [
+        {
+            cause: 'Frame size exceed 12 bytes',
+            frame: '11223344556677889910111213'
+        },
+        {
+            cause: 'Invalid frame size (7 chars)',
+            frame: '1122334'
+        },
+        {
+            cause: 'Invalid empty frame',
+            frame: ''
+        },
+        {
+            cause: 'Invalid frame size (1 chars)',
+            frame: 'a'
+        },
+        {
+            cause: 'Frame must be hexadecimal',
+            frame: '0A1b2G'
+        },
+        {
+            cause: 'Frame must be hexadecimal',
+            frame: 'Zz'
+        }
+    ];
+    it.each(invalidFrames)(
+        'should fail when send a invalid frame for $cause',
+        async ({ cause, frame }) => {
+            expect.assertions(1);
+            commandRunnerMock.mockReadFromSerialPortOnce(
+                commandRunnerMock.mockGenerateValidResponse('TD1208')
+            );
+            try {
+                await td1208.sendData(frame);
+            } catch (error) {
+                expect(error).toEqual(
+                    new Error(`Cannot send frame AT$SF=${frame}. ${cause}`)
+                );
             }
+        }
+    );
+
+    it('should send a frame to backend and wait for response from server', async () => {
+        const data = 'ABCDEF010203';
+        const dataReceived = 'aa bb cc dd ee ff 20 22 ';
+        const expectedData = [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x20, 0x22];
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateDataReceived('TD1208', dataReceived)
         );
 
-        expect(response).toEqual('aabbccddeeff2022');
+        const response = await td1208.sendDataAndWaitForResponse(data, {
+            timeout: 500
+        });
+
+        expect(response).toEqual(expectedData);
+    });
+
+    it('should send a frame to backend and fail when send a invalid frame and wait for response', async () => {
+        expect.assertions(1);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('TD1208')
+        );
+        const data = 'FFCEDE0G';
+
+        try {
+            await td1208.sendData(data);
+        } catch (error) {
+            expect(error).toEqual(
+                new Error(
+                    `Cannot send frame AT$SF=${data}. Frame must be hexadecimal`
+                )
+            );
+        }
+    });
+
+    it('should send a frame to backend and fails if serial port responding error sending a frame and wait response', async () => {
+        expect.assertions(1);
+        const frame = '010203';
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('TD1208')
+        );
+        try {
+            await td1208.sendDataAndWaitForResponse(frame, { timeout: 100 });
+        } catch (error) {
+            expect(error).toEqual(
+                new Error(`Cannot send frame AT$SF=${frame},2,1`)
+            );
+        }
+    });
+
+    it('should send a frame to backend and fails if serial port not respond when waiting a response', async () => {
+        expect.assertions(1);
+        const frame = '010203';
+        try {
+            await td1208.sendDataAndWaitForResponse(frame, { timeout: 100 });
+        } catch (error) {
+            expect(error).toEqual(
+                new Error(`Cannot send frame AT$SF=${frame},2,1`)
+            );
+        }
+    });
+
+    it('should send a frame to backend and fails when server respond without data', async () => {
+        expect.assertions(1);
+        const data = '010203';
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateDataReceived('TD1208', '')
+        );
+
+        const response = await td1208.sendDataAndWaitForResponse(data, {
+            timeout: 500
+        });
+
+        expect(response).toEqual([]);
+    });
+
+    it('should send a frame to backend and fails when server responds with NO data', async () => {
+        const data = '010203';
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateNODataReceived('TD1208')
+        );
+
+        const response = await td1208.sendDataAndWaitForResponse(data, {
+            timeout: 500
+        });
+
+        expect(response).toEqual([]);
     });
 });
-
-// Get Version
-// [ 'ati5\r', 'M10+2015', 'OK' ]
-
-// GetInformation
-// [
-//     'AT&V\r',
-//     'Telecom Design TD1207',
-//     'Hardware Version: 0F',
-//     'Software Version: SOFT2068',
-//     'S/N: 0020451D',
-//     'TDID: 140558105258',
-//     'ACTIVE PROFILE',
-//     'E1 V1 Q0 X1 S200:0 S300:24 S301:2 S302:14 S303:1 S304:1 S305:0 S306:000001FF0000000000000000 S307:1 S308:1395000 S350:0 S351:32768 S352:1 S353:10 S400:000001 S401:FFFFFF S402:0 S403:869700000 S404:14 S405:-95 S406:1',
-//     'OK'
-// ]
-
-// Send Error
-//       [ 'AT$SF=JUANJO\r', 'ERROR' ]
-//  [ 'AT$SF=000102030405060708090A0B0C0D0E0F,2,1\r', 'ERROR' ]
-// Send OK
-//[ 'AT$SF=010203\r', 'OK' ]
-//       [ 'AT$SF=010203040506070809,2,1\r', 'OK', '+RX BEGIN', '+RX END' ]
-// [
-//     'AT$SF=010203040506070809101112,2,1\r',
-//     'OK',
-//     '+RX BEGIN',
-//     '+RX=aa bb cc dd ee ff 20 22 ',
-//     '+RX END'
-// ]
-// [
-//     'AT$SF=010203040506070809101112,2,1\r',
-//     'OK',
-//     '+RX BEGIN',
-//     '+RX END'
-// ]

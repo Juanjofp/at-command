@@ -8,11 +8,16 @@ import {
 } from '../';
 import {
     errorResponseRAK811,
+    errorResponseTD1208,
     infoDataRAK811,
     infoDataTD1208,
     receivedDataRAK811,
+    receivedDataTD1208,
+    receivedNODataRAK811,
+    receivedNODataTD1208,
     validJOINRAK811,
     validResponseRAK811,
+    validResponseTD1208,
     versionRAK811,
     versionTD1208
 } from './data';
@@ -20,6 +25,8 @@ import {
 export type DeviceModel = 'RAK811' | 'RAK11300' | 'TD1208';
 type ErrorInDevice<T extends DeviceModel> = T extends 'RAK811'
     ? number
+    : T extends 'TD1208'
+    ? never
     : string;
 
 export type CommandRunnerBuilderMock = {
@@ -33,10 +40,11 @@ export type CommandRunnerBuilderMock = {
     mockGenerateValidResponse(device: DeviceModel): string[];
     mockGenerateError<T extends DeviceModel>(
         device: T,
-        error: ErrorInDevice<T>
+        error?: ErrorInDevice<T>
     ): string[];
     mockGenerateJoinSuccess(device: DeviceModel): string[];
     mockGenerateDataReceived(device: DeviceModel, data: string): string[];
+    mockGenerateNODataReceived(device: DeviceModel): string[];
 } & CommandRunnerBuilder &
     ATSerialPortBuilder;
 
@@ -76,7 +84,7 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
         mockResponse = data;
     }
 
-    const mockResponseOnce: string[][] = [];
+    let mockResponseOnce: string[][] = [];
     function mockReadFromSerialPortOnce(data: string[]) {
         mockResponseOnce.push(data);
     }
@@ -105,6 +113,7 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
         serialPortList = [];
         errorWhenCreatePort = undefined;
         mockResponse = [];
+        mockResponseOnce = [];
     }
 
     function mockGenerateInfo(device: DeviceModel) {
@@ -121,17 +130,18 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
 
     function mockGenerateValidResponse(device: DeviceModel) {
         if (device === 'RAK811') return validResponseRAK811;
-        if (device === 'TD1208') return validResponseRAK811;
+        if (device === 'TD1208') return validResponseTD1208;
         return ['', ''];
     }
 
     function mockGenerateError<T extends DeviceModel>(
         device: T,
-        error: ErrorInDevice<T>
+        error?: ErrorInDevice<T>
     ) {
         if (device === 'RAK811') {
-            return errorResponseRAK811(+error);
+            return errorResponseRAK811(+error!);
         }
+        if (device === 'TD1208') return errorResponseTD1208;
         return ['', ''];
     }
 
@@ -142,6 +152,13 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
 
     function mockGenerateDataReceived(device: DeviceModel, data: string) {
         if (device === 'RAK811') return receivedDataRAK811(data);
+        if (device === 'TD1208') return receivedDataTD1208(data);
+        return ['', ''];
+    }
+
+    function mockGenerateNODataReceived(device: DeviceModel) {
+        if (device === 'RAK811') return receivedNODataRAK811;
+        if (device === 'TD1208') return receivedNODataTD1208;
         return ['', ''];
     }
 
@@ -157,6 +174,7 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
         mockGenerateError,
         mockGenerateJoinSuccess,
         mockGenerateDataReceived,
+        mockGenerateNODataReceived,
         getSerialPortList: () => Promise.resolve(serialPortList),
         buildSerialPort,
         buildCommandRunner: CommandRunnerBuilder.buildCommandRunner

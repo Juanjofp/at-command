@@ -161,17 +161,26 @@ export function buildRak811(
         await sendData(data, { timeout });
     }
 
+    function extractDataReceived(response: string | undefined) {
+        if (!response) return [];
+        const hexResponse = [];
+        for (let i = 0; i < response.length; i += 2) {
+            hexResponse.push(parseInt(`${response[i]}${response[i + 1]}`, 16));
+        }
+        return hexResponse;
+    }
     function parseDataReceived(data: string) {
         const [, message] = data.split('=');
         const [status, response] = message.split(':');
         const [port, rssi, snr, dataSize] = status.split(',');
+        const hexResponse = extractDataReceived(response);
         return {
             status: parseInt(status),
             port: parseInt(port),
             rssi: parseInt(rssi),
             snr: parseInt(snr),
             dataSize: parseInt(dataSize),
-            data: response
+            data: hexResponse
         };
     }
     async function sendDataAndWaitResponse(
