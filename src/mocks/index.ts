@@ -139,6 +139,7 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
         error?: ErrorInDevice<T>
     ) {
         if (device === 'RAK811') {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             return errorResponseRAK811(+error!);
         }
         if (device === 'TD1208') return errorResponseTD1208;
