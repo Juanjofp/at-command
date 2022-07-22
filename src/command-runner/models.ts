@@ -1,3 +1,5 @@
+import { Logger } from '../log-service';
+
 export class RunCommandTimeoutError extends Error {
     constructor(readonly command: string, readonly dataReceived: string[]) {
         super(
@@ -11,6 +13,7 @@ export type ValidationPredicate = (result: string[]) => boolean;
 export type ExecutionOptions = {
     validation?: ValidationPredicate;
     timeout?: number;
+    logger?: Logger;
 };
 export type CommandResult = {
     command: string;

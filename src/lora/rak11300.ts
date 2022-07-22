@@ -1,4 +1,4 @@
-import { CommandRunnerBuilder, ATSerialPort, CommandResult } from '@/index';
+import { CommandRunnerBuilder, ATSerialPort, CommandResult } from '../';
 import { LoraDeps, LoraModels } from './models';
 import { validateCommand } from './validators';
 import { runWithRetryDelayed } from '../utils';

@@ -16,13 +16,16 @@ async function executeCommandAndWaitResponse(
     parser: Transform,
     {
         validation = defaultValidationPredicate,
-        timeout = 5000
+        timeout = 5000,
+        logger = silentLogger
     }: ExecutionOptions
 ): Promise<CommandResult> {
     return new Promise((resolve, reject) => {
         const lastData: string[] = [];
         function parserListener(data: Buffer) {
-            lastData.push(data.toString('utf8'));
+            const nextLine = data.toString('utf8');
+            logger.info(`[SerialPort] Received line ${nextLine}`);
+            lastData.push(nextLine);
             try {
                 if (validation(lastData)) {
                     clearTimeout(timeoutId);
@@ -66,7 +69,7 @@ export function buildCommandRunner({
     }
 
     async function executeCommand(cmd: string, options: ExecutionOptions = {}) {
-        logger.info('Execute Command', cmd);
+        logger.info('Executing Command', cmd);
         const command = async () => {
             return await serialPort.write(cmd + '\r\n');
         };
