@@ -1,13 +1,7 @@
 import type { ATSerialPort } from '../serialports';
-import { CommandRunner, CommandRunnerBuilder } from '../command-runner';
-import { debugLogger, Logger, silentLogger } from '../log-service';
-
-export type SigfoxDeps = {
-    debug?: boolean;
-    logger?: Logger;
-    runner?: CommandRunner;
-    commandTimeout?: number;
-};
+import { CommandRunnerBuilder } from '../command-runner';
+import { debugLogger, silentLogger } from '../log-service';
+import { CommandRunnerDeps } from '../models';
 
 export function buildTD1208(
     serialPort: ATSerialPort,
@@ -20,7 +14,7 @@ export function buildTD1208(
             logger
         }),
         commandTimeout = 3000
-    }: SigfoxDeps = {}
+    }: CommandRunnerDeps = {}
 ) {
     async function getVersion() {
         const command = async () =>

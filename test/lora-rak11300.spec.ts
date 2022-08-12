@@ -1,6 +1,12 @@
-import { ATSerialPortBuilder, LoraResponseError, Rak11300 } from '@/index';
+import {
+    ATSerialPort,
+    ATSerialPortBuilder,
+    buildCommandRunnerMock,
+    LoraResponseError,
+    Rak11300
+} from '@/index';
 
-const serialPath = '/dev/tty.usbmodem1101';
+const serialPath = '/dev/tty.usbmodem21201';
 jest.setTimeout(50000);
 
 describe.skip('LoRa rak11300', () => {
@@ -9,7 +15,7 @@ describe.skip('LoRa rak11300', () => {
         const serialPort = await ATSerialPortBuilder.buildSerialPort(
             serialPath
         );
-        rak11300 = Rak11300.buildRak11300(serialPort);
+        rak11300 = Rak11300.buildRak11300(serialPort, { debug: true });
     });
 
     it('should get its version', async () => {
@@ -240,80 +246,110 @@ describe.skip('LoRa rak11300', () => {
         expect(info.isJoined).toEqual(false);
     });
 
-    // it('should send an unconfirmed frame to gateway', async () => {
-    //     await rak811.sendUnconfirmedData('01020304');
-    // });
-    //
-    // it.skip('should send a confirmed frame to gateway', async () => {
-    //     const response = await rak811.sendConfirmedData('010203');
-    //
-    //     expect(response.data).toEqual('');
-    //     expect(response.port).toEqual(0);
-    //     expect(response.rssi).toEqual(-128);
-    //     expect(response.snr).toEqual(0);
-    // });
-    //
-    // it.skip('should send an unconfirmed frame to gateway and receive response', async () => {
-    //     const response = await rak811.sendUnconfirmedDataAndWaitForResponse(
-    //         '03010204',
-    //         { timeout: 30000 }
-    //     );
-    //
-    //     expect(response.data).toEqual('');
-    //     expect(response.port).toEqual(0);
-    //     expect(response.rssi).toEqual(-128);
-    //     expect(response.snr).toEqual(0);
-    // });
-    //
-    // it.skip('should send a confirmed frame to gateway and receive response', async () => {
-    //     const response = await rak811.sendConfirmedDataAndWaitForResponse(
-    //         '202122'
-    //     );
-    //
-    //     expect(response.data).toEqual('');
-    //     expect(response.port).toEqual(0);
-    //     expect(response.rssi).toEqual(-128);
-    //     expect(response.snr).toEqual(0);
-    // });
+    it('should send an unconfirmed frame to gateway', async () => {
+        await rak11300.sendUnconfirmedData('0102030405');
+    });
+
+    it.skip('should send an unconfirmed frame to gateway and receive response', async () => {
+        const response = await rak11300.sendUnconfirmedDataAndWaitForResponse(
+            '03010204',
+            { timeout: 45000 }
+        );
+
+        expect(response.data).toEqual('');
+        expect(response.port).toEqual(0);
+        expect(response.rssi).toEqual(-128);
+        expect(response.snr).toEqual(0);
+    });
 });
 
-// GetVersion
-//       [ 'AT+VER=?\r', '+VER:1.0.0 Apr 21 2022 16:04:06', 'OK' ]
-// Get Information
-// [
-//     'AT+STATUS=?\rDevice status:\n' +
-//     '   Auto join enabled\n' +
-//     '   Mode LPWAN\n' +
-//     'LPWAN status:\n' +
-//     '   Marks: AA 55\n' +
-//     '   Dev EUI E660CCC14B738A30\n' +
-//     '   App EUI 308A734BC1CC60E6\n' +
-//     '   App Key E660CCC14B738A30308A734BC1CC60E6\n' +
-//     '   Dev Addr 4634BEBA\n' +
-//     '   NWS Key E660CCC14B738A30308A734BC1CC60E6\n' +
-//     '   Apps Key E660CCC14B738A30308A734BC1CC60E6\n' +
-//     '   OTAA enabled\n' +
-//     '   ADR enabled\n' +
-//     '   Public Network\n' +
-//     '   Dutycycle disabled\n' +
-//     '   Repeat time 0\n' +
-//     '   Join trials 10\n' +
-//     '   TX Power 0\n' +
-//     '   DR 3\n' +
-//     '   Class 0\n' +
-//     '   Subband 1\n' +
-//     '   Fport 2\n' +
-//     '   Unconfirmed Message\n' +
-//     '   Region EU868\n' +
-//     '   Network not joined\n' +
-//     'LoRa P2P status:\n' +
-//     '   P2P frequency 916000000\n' +
-//     '   P2P TX Power 22\n' +
-//     '   P2P BW 125\n' +
-//     '   P2P SF 7\n' +
-//     '   P2P CR 1\n' +
-//     '   P2P Preamble length 8\n' +
-//     '   P2P Symbol Timeout 0\n',
-//     '+STATUS: ',
-//     'OK'
-// ]
+describe('Mock LoRa rak11300 should', () => {
+    let rak11300: Rak11300.LoraRak11300;
+    let atPort: ATSerialPort;
+    const commandRunnerMock = buildCommandRunnerMock();
+    const infoData = commandRunnerMock.mockGenerateInfo('RAK11300');
+
+    beforeAll(async () => {
+        atPort = await commandRunnerMock.buildSerialPort(serialPath);
+        rak11300 = Rak11300.buildRak11300(atPort, {
+            debug: true,
+            commandTimeout: 200
+        });
+    });
+
+    beforeEach(() => {
+        commandRunnerMock.mockClear();
+    });
+
+    it('get its version', async () => {
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateVersion('RAK11300')
+        );
+
+        const version = await rak11300.getVersion();
+
+        expect(version).toEqual('1.0.0');
+    });
+
+    it('should throw an exception when command fails', async () => {
+        expect.assertions(2);
+        try {
+            await rak11300.getVersion();
+        } catch (error) {
+            if (error instanceof Error) {
+                expect(error.message).toBe(
+                    'Timeout error: 0 lines received for command: AT+VER=?'
+                );
+            }
+            expect(atPort.isOpen()).toBe(false);
+        }
+    });
+
+    it('should get configuration info', async () => {
+        commandRunnerMock.mockReadFromSerialPortOnce(infoData);
+
+        const info = await rak11300.getInformation();
+
+        expect(info.region).toEqual('EU868');
+        expect(info.joinMode).toEqual('OTAA');
+        expect(info.devEui).toEqual('E660CCC14B738A30');
+        expect(info.appEui).toEqual('308A734BC1CC60E6');
+        expect(info.appKey).toEqual('E660CCC14B738A30308A734BC1CC60E6');
+        expect(info.classType).toEqual('A');
+        expect(info.isConfirm).toEqual(false);
+        expect(info.isJoined).toBe(false);
+    });
+
+    it.only('should get configuration info with AppEui unknown', async () => {
+        const fakeInfo = infoData.slice();
+        fakeInfo[0] = fakeInfo[0]
+            .slice()
+            .replace('   App EUI 308A734BC1CC60E6\n', '');
+        console.log('mock data +++++++++++', fakeInfo);
+        commandRunnerMock.mockReadFromSerialPortOnce(fakeInfo);
+
+        const info = await rak11300.getInformation();
+
+        expect(info.region).toEqual('EU868');
+        expect(info.joinMode).toEqual('OTAA');
+        expect(info.devEui).toEqual('E660CCC14B738A30');
+        expect(info.appEui).toEqual('unknown');
+        expect(info.appKey).toEqual('AC1F09FFFE04891AAC1F09FFF8680811');
+        expect(info.classType).toEqual('A');
+        expect(info.isJoined).toBe(false);
+    });
+});
+
+// SEND DATA
+// console.log
+// <Info> Executing Command AT+SEND=2:03010204
+//
+// at Object.info (src/log-service/index.ts:3:17)
+//
+// console.log
+// <Info> [SerialPort] Received line AT+SEND=2:03010204
+//
+// at Object.info (src/log-service/index.ts:3:17)
+//
+// console.log
+// <Info> [SerialPort] Received line OK

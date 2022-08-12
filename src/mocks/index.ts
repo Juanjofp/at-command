@@ -9,6 +9,7 @@ import {
 import {
     errorResponseRAK811,
     errorResponseTD1208,
+    infoDataRAK11300,
     infoDataRAK811,
     infoDataTD1208,
     receivedDataRAK811,
@@ -18,6 +19,7 @@ import {
     validJOINRAK811,
     validResponseRAK811,
     validResponseTD1208,
+    versionRAK11300,
     versionRAK811,
     versionTD1208
 } from './data';
@@ -93,7 +95,7 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
         mockResponseData.forEach((line, index) => {
             setTimeout(() => {
                 mockTransform.write(line);
-            }, 10 * index);
+            }, 5 * index);
         });
     }
     async function write(data: WriteValues) {
@@ -119,12 +121,14 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
     function mockGenerateInfo(device: DeviceModel) {
         if (device === 'RAK811') return infoDataRAK811;
         if (device === 'TD1208') return infoDataTD1208;
+        if (device === 'RAK11300') return infoDataRAK11300;
         return ['', ''];
     }
 
     function mockGenerateVersion(device: DeviceModel) {
         if (device === 'RAK811') return versionRAK811;
         if (device === 'TD1208') return versionTD1208;
+        if (device === 'RAK11300') return versionRAK11300;
         return ['', ''];
     }
 

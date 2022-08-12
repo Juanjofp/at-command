@@ -71,3 +71,47 @@ export const receivedNODataTD1208 = [
     '+RX BEGIN',
     '+RX END'
 ];
+
+export const versionRAK11300 = [
+    'AT+VER=?\r',
+    '+VER:1.0.0 Apr 21 2022 16:04:06',
+    'OK'
+];
+
+export const infoDataRAK11300 = [
+    'AT+STATUS=?\rDevice status:\n' +
+        '   Auto join enabled\n' +
+        '   Mode LPWAN\n' +
+        'LPWAN status:\n' +
+        '   Marks: AA 55\n' +
+        '   Dev EUI E660CCC14B738A30\n' +
+        '   App EUI 308A734BC1CC60E6\n' +
+        '   App Key E660CCC14B738A30308A734BC1CC60E6\n' +
+        '   Dev Addr 4634BEBA\n' +
+        '   NWS Key E660CCC14B738A30308A734BC1CC60E6\n' +
+        '   Apps Key E660CCC14B738A30308A734BC1CC60E6\n' +
+        '   OTAA enabled\n' +
+        '   ADR enabled\n' +
+        '   Public Network\n' +
+        '   Dutycycle disabled\n' +
+        '   Repeat time 0\n' +
+        '   Join trials 10\n' +
+        '   TX Power 0\n' +
+        '   DR 3\n' +
+        '   Class 0\n' +
+        '   Subband 1\n' +
+        '   Fport 2\n' +
+        '   Unconfirmed Message\n' +
+        '   Region EU868\n' +
+        '   Network not joined\n' +
+        'LoRa P2P status:\n' +
+        '   P2P frequency 916000000\n' +
+        '   P2P TX Power 22\n' +
+        '   P2P BW 125\n' +
+        '   P2P SF 7\n' +
+        '   P2P CR 1\n' +
+        '   P2P Preamble length 8\n' +
+        '   P2P Symbol Timeout 0\n',
+    '+STATUS: ',
+    'OK'
+];

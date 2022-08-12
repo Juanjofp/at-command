@@ -1,13 +1,3 @@
-import { CommandRunner } from '../command-runner';
-import { Logger } from '../log-service';
-
-export type LoraDeps = {
-    debug?: boolean;
-    logger?: Logger;
-    runner?: CommandRunner;
-    commandTimeout?: number;
-};
-
 export const LoraModels = {
     RAK811: 'RAK811',
     RAK11300: 'RAK11300'

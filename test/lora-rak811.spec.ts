@@ -176,10 +176,11 @@ describe('Mock LoRa rak811', () => {
     let atPort: ATSerialPort;
     const commandRunnerMock = buildCommandRunnerMock();
     const infoData = commandRunnerMock.mockGenerateInfo('RAK811');
+
     beforeAll(async () => {
         atPort = await commandRunnerMock.buildSerialPort(serialPath);
         rak811 = Rak811.buildRak811(atPort, {
-            commandTimeout: 250
+            commandTimeout: 125
         });
     });
 

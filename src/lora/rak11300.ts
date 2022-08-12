@@ -4,10 +4,11 @@ import {
     CommandResult,
     debugLogger
 } from '../';
-import { LoraDeps, LoraModels } from './models';
-import { validateCommand } from './validators';
+import { LoraModels } from './models';
+import { validateCommand, waitForReceivedValidation } from './validators';
 import { runWithRetryDelayed } from '../utils';
 import { silentLogger } from '../log-service';
+import { CommandRunnerDeps } from '../models';
 
 function validateRak11300Command(data: string[]) {
     return validateCommand(data, '+cme error', LoraModels.RAK11300);
@@ -71,7 +72,7 @@ export function buildRak11300(
             logger
         }),
         commandTimeout = 3000
-    }: LoraDeps = {}
+    }: CommandRunnerDeps = {}
 ) {
     async function getVersion() {
         const command = () =>
@@ -256,6 +257,93 @@ export function buildRak11300(
         !(await runWithRetryDelayed(isJoined, 4, 1000));
     }
 
+    async function runSendData(
+        data: string,
+        validation: (data: string[]) => boolean,
+        timeout: number
+    ) {
+        return await runner.executeCommand(`AT+SEND=9:${data}`, {
+            timeout,
+            validation
+        });
+    }
+
+    async function sendData(
+        data: string,
+        {
+            confirmed = false,
+            timeout,
+            validation = validateRak11300Command
+        }: {
+            confirmed?: boolean;
+            validation?: (data: string[]) => boolean;
+            timeout: number;
+        }
+    ) {
+        return await runner.runCommand(async () => {
+            const infoResponse = await runInformationCommand();
+            const info = parseInformation(infoResponse);
+            if (!info.isJoined) {
+                await runJoin();
+            }
+            const confirmedResponse = await runSetConfirmation(confirmed)();
+            console.log('Confirmed Response', confirmedResponse);
+            return await runSendData(data, validation, timeout);
+        });
+    }
+
+    async function sendUnconfirmedData(data: string, { timeout = 10000 } = {}) {
+        await sendData(data, { timeout });
+    }
+
+    function extractDataReceived(response: string | undefined) {
+        if (!response) return [];
+        const hexResponse = [];
+        for (let i = 0; i < response.length; i += 2) {
+            hexResponse.push(parseInt(`${response[i]}${response[i + 1]}`, 16));
+        }
+        return hexResponse;
+    }
+    function parseDataReceived(data: string) {
+        const [, message] = data.split('=');
+        const [status, response] = message.split(':');
+        const [port, rssi, snr, dataSize] = status.split(',');
+        const hexResponse = extractDataReceived(response);
+        return {
+            status: parseInt(status),
+            port: parseInt(port),
+            rssi: parseInt(rssi),
+            snr: parseInt(snr),
+            dataSize: parseInt(dataSize),
+            data: hexResponse
+        };
+    }
+    async function sendDataAndWaitResponse(
+        data: string,
+        { timeout, confirmed = false }: { timeout: number; confirmed?: boolean }
+    ) {
+        const response = await sendData(data, {
+            confirmed,
+            timeout,
+            validation: waitForReceivedValidation
+        });
+        return parseDataReceived(response.data[1]);
+    }
+
+    async function sendUnconfirmedDataAndWaitForResponse(
+        data: string,
+        { timeout = 6000 } = {}
+    ) {
+        return sendDataAndWaitResponse(data, { timeout });
+    }
+
+    async function sendConfirmedDataAndWaitForResponse(
+        data: string,
+        { timeout = 6000 } = {}
+    ) {
+        return sendDataAndWaitResponse(data, { timeout, confirmed: true });
+    }
+
     return {
         getVersion,
         getInformation,
@@ -270,7 +358,10 @@ export function buildRak11300(
         reset,
         isJoined,
         join,
-        leave
+        leave,
+        sendUnconfirmedData,
+        sendUnconfirmedDataAndWaitForResponse,
+        sendConfirmedDataAndWaitForResponse
     };
 }
 

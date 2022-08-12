@@ -1,12 +1,12 @@
 import { ATSerialPort } from '../serialports';
 import { CommandRunnerBuilder, CommandResult } from '../command-runner';
-import { LoraDeps } from './models';
 import {
     trimValue,
     validateCommand,
     waitForReceivedValidation
 } from './validators';
 import { debugLogger, silentLogger } from '../log-service';
+import { CommandRunnerDeps } from '../models';
 
 export function buildRak811(
     serialPort: ATSerialPort,
@@ -19,7 +19,7 @@ export function buildRak811(
             logger
         }),
         commandTimeout = 3000
-    }: LoraDeps = {}
+    }: CommandRunnerDeps = {}
 ) {
     async function getVersion() {
         const command = () =>
