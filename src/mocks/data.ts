@@ -77,7 +77,6 @@ export const versionRAK11300 = [
     '+VER:1.0.0 Apr 21 2022 16:04:06',
     'OK'
 ];
-
 export const infoDataRAK11300 = [
     'AT+STATUS=?\rDevice status:\n' +
         '   Auto join enabled\n' +
@@ -114,4 +113,8 @@ export const infoDataRAK11300 = [
         '   P2P Symbol Timeout 0\n',
     '+STATUS: ',
     'OK'
+];
+export const validResponseRAK11300 = ['AT+CMD=SUCCESS', 'OK'];
+export const errorResponseRAK11300 = (errorNumber: number) => [
+    `+CME ERROR:${errorNumber}`
 ];

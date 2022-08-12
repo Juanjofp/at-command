@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { ATSerialPortBuilder, Rak811, TD1208 } from '.';
+import { ATSerialPortBuilder, Rak811, TD1208, Rak11300 } from '.';
 
 const commands: Record<
     string,
@@ -60,7 +60,7 @@ function requirePortName(portName: string, command = 'this command') {
 }
 
 async function sendDataAndWait(
-    device: TD1208.SigfoxTD1208 | Rak811.LoraRak811,
+    device: TD1208.SigfoxTD1208 | Rak811.LoraRak811 | Rak11300.LoraRak11300,
     payload: string
 ) {
     if ('sendUnconfirmedDataAndWaitForResponse' in device) {
@@ -75,7 +75,7 @@ async function sendDataAndWait(
 }
 
 async function sendData(
-    device: TD1208.SigfoxTD1208 | Rak811.LoraRak811,
+    device: TD1208.SigfoxTD1208 | Rak811.LoraRak811 | Rak11300.LoraRak11300,
     payload: string
 ) {
     if ('sendUnconfirmedData' in device) {
@@ -85,8 +85,11 @@ async function sendData(
     }
 }
 async function initDevice(device: string, portName: string) {
-    if (device === 'rak811') {
+    if (device.toLowerCase() === 'rak811') {
         return initRAk811(portName);
+    }
+    if (device.toLowerCase() === 'rak11300') {
+        return initRAK11300(portName);
     }
     return initTD1208(portName);
 }
@@ -94,6 +97,11 @@ async function initDevice(device: string, portName: string) {
 async function initRAk811(portName: string) {
     const port = await ATSerialPortBuilder.buildSerialPort(portName);
     return Rak811.buildRak811(port);
+}
+
+async function initRAK11300(portName: string) {
+    const port = await ATSerialPortBuilder.buildSerialPort(portName);
+    return Rak11300.buildRak11300(port);
 }
 
 async function initTD1208(portName: string) {
@@ -107,10 +115,10 @@ function printMenu() {
     console.log('\n\n------------ MENU ----------------------');
     console.log('Commands:');
     console.log('  list');
-    console.log('  version <RAK811|TD1208> <portName>');
-    console.log('  status <RAK811|TD1208> <portName>');
-    console.log('  send <RAK811|TD1208> <portName> <hexData>');
-    console.log('  sendWait <RAK811|TD1208> <portName> <hexData>');
+    console.log('  version <RAK811|TD1208|RAK11300> <portName>');
+    console.log('  status <RAK811|TD1208|RAK11300> <portName>');
+    console.log('  send <RAK811|TD1208|RAK11300> <portName> <hexData>');
+    console.log('  sendWait <RAK811|TD1208|RAK11300> <portName> <hexData>');
     console.log('\n----------------------------------------');
     console.log(
         '  Sample: @juanjofp/at-command-cli version rak811 /dev/ttyUSB0'

@@ -7,6 +7,7 @@ import {
     ATSerialPortBuilder
 } from '../';
 import {
+    errorResponseRAK11300,
     errorResponseRAK811,
     errorResponseTD1208,
     infoDataRAK11300,
@@ -17,6 +18,7 @@ import {
     receivedNODataRAK811,
     receivedNODataTD1208,
     validJOINRAK811,
+    validResponseRAK11300,
     validResponseRAK811,
     validResponseTD1208,
     versionRAK11300,
@@ -26,6 +28,8 @@ import {
 
 export type DeviceModel = 'RAK811' | 'RAK11300' | 'TD1208';
 type ErrorInDevice<T extends DeviceModel> = T extends 'RAK811'
+    ? number
+    : T extends 'RAK11300'
     ? number
     : T extends 'TD1208'
     ? never
@@ -135,6 +139,7 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
     function mockGenerateValidResponse(device: DeviceModel) {
         if (device === 'RAK811') return validResponseRAK811;
         if (device === 'TD1208') return validResponseTD1208;
+        if (device === 'RAK11300') return validResponseRAK11300;
         return ['', ''];
     }
 
@@ -146,12 +151,17 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             return errorResponseRAK811(+error!);
         }
+        if (device === 'RAK11300') {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            return errorResponseRAK11300(+error!);
+        }
         if (device === 'TD1208') return errorResponseTD1208;
         return ['', ''];
     }
 
     function mockGenerateJoinSuccess(device: DeviceModel) {
         if (device === 'RAK811') return validJOINRAK811;
+        if (device === 'RAK11300') return validResponseRAK11300;
         return ['', ''];
     }
 

@@ -68,7 +68,7 @@ describe.skip('LoRa rak11300', () => {
         expect(info.devEui).toEqual(devEui);
     });
 
-    it('should fails when try to set a invalid APP EUI', async () => {
+    it.only('should fails when try to set a invalid APP EUI', async () => {
         expect.assertions(2);
         const appEui = '308A734BC1CC60E6';
 
@@ -272,7 +272,6 @@ describe('Mock LoRa rak11300 should', () => {
     beforeAll(async () => {
         atPort = await commandRunnerMock.buildSerialPort(serialPath);
         rak11300 = Rak11300.buildRak11300(atPort, {
-            debug: true,
             commandTimeout: 200
         });
     });
@@ -320,7 +319,7 @@ describe('Mock LoRa rak11300 should', () => {
         expect(info.isJoined).toBe(false);
     });
 
-    it.only('should get configuration info with AppEui unknown', async () => {
+    it.skip('should get configuration info with AppEui unknown', async () => {
         const fakeInfo = infoData.slice();
         fakeInfo[0] = fakeInfo[0]
             .slice()
@@ -337,6 +336,152 @@ describe('Mock LoRa rak11300 should', () => {
         expect(info.appKey).toEqual('AC1F09FFFE04891AAC1F09FFF8680811');
         expect(info.classType).toEqual('A');
         expect(info.isJoined).toBe(false);
+    });
+
+    it('should set a valid device EUI', async () => {
+        const devEui = 'E660CCC14B738A30';
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK11300')
+        );
+        commandRunnerMock.mockReadFromSerialPort(infoData);
+
+        await rak11300.setDeviceEui(devEui);
+        const info = await rak11300.getInformation();
+        expect(info.devEui).toEqual(devEui);
+    });
+
+    it('should set a invalid device EUI', async () => {
+        expect.assertions(3);
+        const devEui = 'E660CCC14B738A30';
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('RAK11300', 5)
+        );
+        commandRunnerMock.mockReadFromSerialPort(infoData);
+
+        try {
+            await rak11300.setDeviceEui('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 5: Invalid parameter in the AT command`
+                );
+                expect(error.getLoraError()).toEqual({
+                    model: 'RAK11300',
+                    code: 5,
+                    description: 'Invalid parameter in the AT command'
+                });
+                const info = await rak11300.getInformation();
+                expect(info.devEui).toEqual(devEui);
+            }
+        }
+    });
+
+    it('should manage unknown error responses', async () => {
+        expect.assertions(1);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('RAK11300', 999)
+        );
+
+        try {
+            await rak11300.setDeviceEui('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 999: Unknown error code 999`
+                );
+            }
+        }
+    });
+
+    it('should manage unknown responses', async () => {
+        expect.assertions(1);
+        commandRunnerMock.mockReadFromSerialPortOnce(['unknown response']);
+
+        try {
+            await rak11300.setDeviceEui('invalid');
+        } catch (error) {
+            if (error instanceof Error) {
+                expect(error.message).toBe(
+                    `Timeout error: 1 lines received for command: AT+DEVEUI=invalid`
+                );
+            }
+        }
+    });
+
+    it('should set a invalid APP EUI', async () => {
+        expect.assertions(2);
+        const appEui = '308A734BC1CC60E6';
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('RAK11300', 5)
+        );
+        commandRunnerMock.mockReadFromSerialPort(infoData);
+
+        try {
+            await rak11300.setAppEui('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 5: Invalid parameter in the AT command`
+                );
+                const info = await rak11300.getInformation();
+                expect(info.appEui).toEqual(appEui);
+            }
+        }
+    });
+
+    it('should set a valid APP EUI', async () => {
+        const appEui = '308A734BC1CC60E6';
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK11300')
+        );
+        commandRunnerMock.mockReadFromSerialPort(infoData);
+
+        await rak11300.setAppEui(appEui);
+        const info = await rak11300.getInformation();
+        expect(info.appEui).toEqual(appEui);
+    });
+
+    it('should set a invalid App Key', async () => {
+        expect.assertions(2);
+        const appKey = 'E660CCC14B738A30308A734BC1CC60E6';
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateError('RAK11300', 5)
+        );
+        commandRunnerMock.mockReadFromSerialPort(infoData);
+
+        try {
+            await rak11300.setAppKey('invalid');
+        } catch (error) {
+            if (error instanceof LoraResponseError) {
+                expect(error.message).toBe(
+                    `Lora error code 5: Invalid parameter in the AT command`
+                );
+                const info = await rak11300.getInformation();
+                expect(info.appKey).toEqual(appKey);
+            }
+        }
+    });
+
+    it('should set a valid APP EUI', async () => {
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateValidResponse('RAK11300')
+        );
+        commandRunnerMock.mockReadFromSerialPort(infoData);
+        const appKey = 'E660CCC14B738A30308A734BC1CC60E6';
+
+        await rak11300.setAppKey(appKey);
+
+        const info = await rak11300.getInformation();
+        expect(info.appKey).toEqual(appKey);
+    });
+
+    it.skip('should join successfully', async () => {
+        commandRunnerMock.mockReadFromSerialPortOnce(infoData);
+        commandRunnerMock.mockReadFromSerialPortOnce(
+            commandRunnerMock.mockGenerateJoinSuccess('RAK11300')
+        );
+
+        await rak11300.join();
     });
 });
 

@@ -286,8 +286,7 @@ export function buildRak11300(
             if (!info.isJoined) {
                 await runJoin();
             }
-            const confirmedResponse = await runSetConfirmation(confirmed)();
-            console.log('Confirmed Response', confirmedResponse);
+            await runSetConfirmation(confirmed)();
             return await runSendData(data, validation, timeout);
         });
     }
