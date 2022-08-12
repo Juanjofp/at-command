@@ -6,14 +6,16 @@ import {
     validateCommand,
     waitForReceivedValidation
 } from './validators';
-import { silentLogger } from '../log-service';
+import { debugLogger, silentLogger } from '../log-service';
 
 export function buildRak811(
     serialPort: ATSerialPort,
     {
-        logger = silentLogger,
+        debug = false,
+        logger = debug ? debugLogger : silentLogger,
         runner = CommandRunnerBuilder.buildCommandRunner({
             serialPort,
+            debug,
             logger
         }),
         commandTimeout = 3000

@@ -5,7 +5,7 @@ import {
 } from './models';
 import { Transform } from 'stream';
 import { ATSerialPort } from '../serialports';
-import { Logger, silentLogger } from '../log-service';
+import { Logger, silentLogger, debugLogger } from '../log-service';
 
 function defaultValidationPredicate(result: string[]): boolean {
     return result.some(line => line.toLowerCase().startsWith('ok'));
@@ -17,7 +17,8 @@ async function executeCommandAndWaitResponse(
     {
         validation = defaultValidationPredicate,
         timeout = 5000,
-        logger = silentLogger
+        debug = false,
+        logger = debug ? debugLogger : silentLogger
     }: ExecutionOptions
 ): Promise<CommandResult> {
     return new Promise((resolve, reject) => {
@@ -53,13 +54,16 @@ async function executeCommandAndWaitResponse(
         }, timeout);
     });
 }
+
 export type BuildCommandRunnerDeps = {
+    debug?: boolean;
     serialPort: ATSerialPort;
     logger?: Logger;
 };
 export function buildCommandRunner({
     serialPort,
-    logger = silentLogger
+    debug = false,
+    logger = debug ? debugLogger : silentLogger
 }: BuildCommandRunnerDeps) {
     async function open() {
         await serialPort.open();
@@ -70,6 +74,7 @@ export function buildCommandRunner({
 
     async function executeCommand(cmd: string, options: ExecutionOptions = {}) {
         logger.info('Executing Command', cmd);
+        const executeOptions = { logger, debug, ...options };
         const command = async () => {
             return await serialPort.write(cmd + '\r\n');
         };
@@ -77,7 +82,7 @@ export function buildCommandRunner({
             cmd,
             command,
             serialPort.read(),
-            options
+            executeOptions
         );
     }
 

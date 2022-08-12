@@ -1,4 +1,4 @@
-export const defaultLogger = {
+export const debugLogger = {
     info: (...args: string[]) => {
         console.log('<Info>', ...args);
     },
@@ -7,7 +7,7 @@ export const defaultLogger = {
     }
 };
 
-export type Logger = typeof defaultLogger;
+export type Logger = typeof debugLogger;
 
 export const silentLogger: Logger = {
     info: () => undefined,

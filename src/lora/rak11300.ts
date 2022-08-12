@@ -1,4 +1,9 @@
-import { CommandRunnerBuilder, ATSerialPort, CommandResult } from '../';
+import {
+    CommandRunnerBuilder,
+    ATSerialPort,
+    CommandResult,
+    debugLogger
+} from '../';
 import { LoraDeps, LoraModels } from './models';
 import { validateCommand } from './validators';
 import { runWithRetryDelayed } from '../utils';
@@ -58,9 +63,11 @@ function parseInformation({ data }: CommandResult) {
 export function buildRak11300(
     serialPort: ATSerialPort,
     {
-        logger = silentLogger,
+        debug = false,
+        logger = debug ? debugLogger : silentLogger,
         runner = CommandRunnerBuilder.buildCommandRunner({
             serialPort,
+            debug,
             logger
         }),
         commandTimeout = 3000

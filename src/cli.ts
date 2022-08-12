@@ -157,4 +157,4 @@ async function main() {
     }
 }
 
-main();
+main().catch(printError);

@@ -252,7 +252,9 @@ describe('command-runner Mock', () => {
 
     it('should run a command and get response', async () => {
         const serialPort = await commandRunnerMock.buildSerialPort(serialPath);
-        const runner = commandRunnerMock.buildCommandRunner({ serialPort });
+        const runner = commandRunnerMock.buildCommandRunner({
+            serialPort
+        });
         commandRunnerMock.mockReadFromSerialPort(['OK V3.0.0.14.H']);
         try {
             await runner.open();

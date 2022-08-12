@@ -13,6 +13,7 @@ export type ValidationPredicate = (result: string[]) => boolean;
 export type ExecutionOptions = {
     validation?: ValidationPredicate;
     timeout?: number;
+    debug?: boolean;
     logger?: Logger;
 };
 export type CommandResult = {

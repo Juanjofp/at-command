@@ -1,8 +1,9 @@
 import type { ATSerialPort } from '../serialports';
 import { CommandRunner, CommandRunnerBuilder } from '../command-runner';
-import { Logger, silentLogger } from '../log-service';
+import { debugLogger, Logger, silentLogger } from '../log-service';
 
 export type SigfoxDeps = {
+    debug?: boolean;
     logger?: Logger;
     runner?: CommandRunner;
     commandTimeout?: number;
@@ -11,9 +12,11 @@ export type SigfoxDeps = {
 export function buildTD1208(
     serialPort: ATSerialPort,
     {
-        logger = silentLogger,
+        debug = false,
+        logger = debug ? debugLogger : silentLogger,
         runner = CommandRunnerBuilder.buildCommandRunner({
             serialPort,
+            debug,
             logger
         }),
         commandTimeout = 3000
