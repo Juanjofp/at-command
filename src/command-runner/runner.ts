@@ -55,6 +55,13 @@ async function executeCommandAndWaitResponse(
     });
 }
 
+export type ExecutorCommand = (
+    cmd: string,
+    options?: ExecutionOptions
+) => Promise<CommandResult>;
+export type ExecutorCommandFn = (
+    executor: ExecutorCommand
+) => Promise<CommandResult>;
 export type BuildCommandRunnerDeps = {
     debug?: boolean;
     serialPort: ATSerialPort;
@@ -86,23 +93,21 @@ export function buildCommandRunner({
         );
     }
 
-    async function runCommand(commandFunction: () => Promise<CommandResult>) {
+    async function runCommand(commandFunction: ExecutorCommandFn) {
         try {
             await open();
-            return await commandFunction();
+            return await commandFunction(executeCommand);
         } finally {
             await close();
         }
     }
 
-    async function runCommands(
-        commandFunctions: (() => Promise<CommandResult>)[]
-    ) {
+    async function runCommands(commandFunctions: ExecutorCommandFn[]) {
         try {
             await open();
             const responses: CommandResult[] = [];
             for (const commandFunction of commandFunctions) {
-                responses.push(await commandFunction());
+                responses.push(await commandFunction(executeCommand));
             }
             return responses;
         } finally {

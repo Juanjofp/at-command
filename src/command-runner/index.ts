@@ -1,6 +1,7 @@
 import {
     buildCommandRunner,
-    CommandRunner as CommandRunnerType
+    CommandRunner as CommandRunnerType,
+    ExecutorCommand as ExecutorCommandType
 } from './runner';
 
 export const CommandRunnerBuilder = {
@@ -8,4 +9,5 @@ export const CommandRunnerBuilder = {
 };
 export type CommandRunnerBuilder = typeof CommandRunnerBuilder;
 export type CommandRunner = CommandRunnerType;
+export type ExecutorCommand = ExecutorCommandType;
 export * from './models';

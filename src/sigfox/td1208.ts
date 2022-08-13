@@ -2,6 +2,7 @@ import type { ATSerialPort } from '../serialports';
 import { CommandRunnerBuilder } from '../command-runner';
 import { debugLogger, silentLogger } from '../log-service';
 import { CommandRunnerDeps } from '../models';
+import { validateOrThrowError, validateFrameOrThrow } from './validators';
 
 export function buildTD1208(
     serialPort: ATSerialPort,
@@ -105,13 +106,6 @@ export function buildTD1208(
 
 export type SigfoxTD1208 = ReturnType<typeof buildTD1208>;
 
-function validateOrThrowError(data: string[]) {
-    data.forEach(response => {
-        if (response.toLowerCase().startsWith('error')) {
-            throw new Error(`Invalid command response: ${data[0]}`);
-        }
-    });
-}
 function parseValidResponseOrThrow(data: string[]) {
     validateOrThrowError(data);
     return data.some(line => line.toLowerCase().startsWith('ok'));
@@ -165,21 +159,7 @@ function parseInformation(data: string[]) {
         region
     };
 }
-function validateFrameOrThrow(data: string) {
-    const errorMessage = `Cannot send frame AT$SF=${data}`;
-    if (!data) throw new Error(`${errorMessage}. Invalid empty frame`);
-    const frameSize = data.length;
-    if (frameSize > 24)
-        throw new Error(`${errorMessage}. Frame size exceed 12 bytes`);
-    if (frameSize % 2 !== 0)
-        throw new Error(
-            `${errorMessage}. Invalid frame size (${data.length} chars)`
-        );
-    const isHexadecimal = new RegExp(`[0-9A-Fa-f]{${frameSize}}`);
-    if (!isHexadecimal.test(data))
-        throw new Error(`${errorMessage}. Frame must be hexadecimal`);
-    return data;
-}
+
 function parseDataResponseOrThrow(data: string[]) {
     const responseString = data[3];
     const responseDataString = responseString.trimEnd().split('=')[1];

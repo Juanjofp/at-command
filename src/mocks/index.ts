@@ -7,9 +7,11 @@ import {
     ATSerialPortBuilder
 } from '../';
 import {
+    errorResponseERIC,
     errorResponseRAK11300,
     errorResponseRAK811,
     errorResponseTD1208,
+    infoDataERIC,
     infoDataRAK11300,
     infoDataRAK811,
     infoDataTD1208,
@@ -21,12 +23,13 @@ import {
     validResponseRAK11300,
     validResponseRAK811,
     validResponseTD1208,
+    versionERIC,
     versionRAK11300,
     versionRAK811,
     versionTD1208
 } from './data';
 
-export type DeviceModel = 'RAK811' | 'RAK11300' | 'TD1208';
+export type DeviceModel = 'RAK811' | 'RAK11300' | 'TD1208' | 'ERIC';
 type ErrorInDevice<T extends DeviceModel> = T extends 'RAK811'
     ? number
     : T extends 'RAK11300'
@@ -126,6 +129,7 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
         if (device === 'RAK811') return infoDataRAK811;
         if (device === 'TD1208') return infoDataTD1208;
         if (device === 'RAK11300') return infoDataRAK11300;
+        if (device === 'ERIC') return infoDataERIC;
         return ['', ''];
     }
 
@@ -133,6 +137,7 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
         if (device === 'RAK811') return versionRAK811;
         if (device === 'TD1208') return versionTD1208;
         if (device === 'RAK11300') return versionRAK11300;
+        if (device === 'ERIC') return versionERIC;
         return ['', ''];
     }
 
@@ -156,6 +161,7 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
             return errorResponseRAK11300(+error!);
         }
         if (device === 'TD1208') return errorResponseTD1208;
+        if (device === 'ERIC') return errorResponseERIC(error + '');
         return ['', ''];
     }
 

@@ -118,3 +118,26 @@ export const validResponseRAK11300 = ['AT+CMD=SUCCESS', 'OK'];
 export const errorResponseRAK11300 = (errorNumber: number) => [
     `+CME ERROR:${errorNumber}`
 ];
+
+export const versionERIC = ['1', '1', '0'];
+export const infoDataERIC = [
+    'AX-Sigfox 1.1.0-ETSI',
+    '00C16E3F',
+    '5A5C706778434E31',
+    '0868130000'
+];
+export const errorResponseERIC = (error: string) => [error];
+export const validResponseERIC = ['OK'];
+export const receivedDataERIC = (data = '030405') => [
+    'AT$SF=010203040506070809101112,2,1\r',
+    'OK',
+    '+RX BEGIN',
+    '+RX=' + data,
+    '+RX END'
+];
+export const receivedNODataERIC = [
+    'AT$SF=010203040506070809101112,2,1\r',
+    'OK',
+    '+RX BEGIN',
+    '+RX END'
+];
