@@ -25,7 +25,7 @@ export function buildEric(
             logger
         }),
         commandTimeout = 30000
-    }: CommandRunnerDeps
+    }: CommandRunnerDeps = {}
 ) {
     function generateSingleLineCommand(command: string) {
         return (executor: ExecutorCommand) =>

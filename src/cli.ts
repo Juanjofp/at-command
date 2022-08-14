@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { ATSerialPortBuilder, Rak811, TD1208, Rak11300 } from '.';
+import { ATSerialPortBuilder, Rak811, TD1208, Rak11300, ERIC } from '.';
 
 const commands: Record<
     string,
@@ -91,6 +91,9 @@ async function initDevice(device: string, portName: string) {
     if (device.toLowerCase() === 'rak11300') {
         return initRAK11300(portName);
     }
+    if (device.toLowerCase() === 'eric') {
+        return initERIC(portName);
+    }
     return initTD1208(portName);
 }
 
@@ -111,14 +114,23 @@ async function initTD1208(portName: string) {
     return TD1208.buildTD1208(port);
 }
 
+async function initERIC(portName: string) {
+    const port = await ATSerialPortBuilder.buildSerialPort(portName, {
+        baudRate: 9600
+    });
+    return ERIC.buildEric(port);
+}
+
 function printMenu() {
     console.log('\n\n------------ MENU ----------------------');
     console.log('Commands:');
     console.log('  list');
-    console.log('  version <RAK811|TD1208|RAK11300> <portName>');
-    console.log('  status <RAK811|TD1208|RAK11300> <portName>');
-    console.log('  send <RAK811|TD1208|RAK11300> <portName> <hexData>');
-    console.log('  sendWait <RAK811|TD1208|RAK11300> <portName> <hexData>');
+    console.log('  version <RAK811|TD1208|RAK11300|ERIC> <portName>');
+    console.log('  status <RAK811|TD1208|RAK11300|ERIC> <portName>');
+    console.log('  send <RAK811|TD1208|RAK11300|ERIC> <portName> <hexData>');
+    console.log(
+        '  sendWait <RAK811|TD1208|RAK11300|ERIC> <portName> <hexData>'
+    );
     console.log('\n----------------------------------------');
     console.log(
         '  Sample: @juanjofp/at-command-cli version rak811 /dev/ttyUSB0'
