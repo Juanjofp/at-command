@@ -2,7 +2,11 @@ import type { ATSerialPort } from '../serialports';
 import { CommandRunnerBuilder } from '../command-runner';
 import { debugLogger, silentLogger } from '../log-service';
 import { CommandRunnerDeps } from '../models';
-import { validateOrThrowError, validateFrameOrThrow } from './validators';
+import {
+    validateFrameOrThrow,
+    validateOKResponseOrThrow,
+    validateResponseAndWaitOrThrow
+} from './validators';
 
 export function buildTD1208(
     serialPort: ATSerialPort,
@@ -21,7 +25,7 @@ export function buildTD1208(
         const command = async () =>
             await runner.executeCommand('ati5', {
                 timeout: commandTimeout,
-                validation: parseValidResponseOrThrow
+                validation: validateOKResponseOrThrow
             });
 
         try {
@@ -38,7 +42,7 @@ export function buildTD1208(
     async function runInformationCommand() {
         return runner.executeCommand('AT&V', {
             timeout: commandTimeout,
-            validation: parseValidResponseOrThrow
+            validation: validateOKResponseOrThrow
         });
     }
     async function getInformation() {
@@ -58,7 +62,7 @@ export function buildTD1208(
     async function runSendDataCommand(data: string, timeout: number) {
         return runner.executeCommand(`AT$SF=${data}`, {
             timeout,
-            validation: parseValidResponseOrThrow
+            validation: validateOKResponseOrThrow
         });
     }
     async function sendData(data: string, { timeout = commandTimeout } = {}) {
@@ -66,7 +70,11 @@ export function buildTD1208(
         try {
             await runner.runCommand(() => runSendDataCommand(frame, timeout));
         } catch (error) {
-            logger.error('[Sigfox TD1208]', 'sendData (AT$SF)', `${error}`);
+            logger.error(
+                '[Sigfox TD1208]',
+                `sendData AT$SF=${data}`,
+                `${error}`
+            );
             throw new Error(`Cannot send frame AT$SF=${data}`);
         }
     }
@@ -74,7 +82,7 @@ export function buildTD1208(
     async function runSendDataCommandAndWait(data: string, timeout: number) {
         return runner.executeCommand(`AT$SF=${data},2,1`, {
             timeout,
-            validation: parseValidResponseAndWaitOrThrow
+            validation: validateResponseAndWaitOrThrow
         });
     }
     async function sendDataAndWaitForResponse(
@@ -90,7 +98,7 @@ export function buildTD1208(
         } catch (error) {
             logger.error(
                 '[Sigfox TD1208]',
-                'sendDataAndWait (AT$SF,2,1)',
+                `sendDataAndWait AT$SF=${data},2,1`,
                 `${error}`
             );
             throw new Error(`Cannot send frame AT$SF=${data},2,1`);
@@ -106,14 +114,6 @@ export function buildTD1208(
 
 export type SigfoxTD1208 = ReturnType<typeof buildTD1208>;
 
-function parseValidResponseOrThrow(data: string[]) {
-    validateOrThrowError(data);
-    return data.some(line => line.toLowerCase().startsWith('ok'));
-}
-function parseValidResponseAndWaitOrThrow(data: string[]) {
-    validateOrThrowError(data);
-    return data.some(line => line.toLowerCase().startsWith('+rx end'));
-}
 function parseVersionOrThrow(data: string[]) {
     if (data.length !== 3 || !data[1])
         throw new Error(`Invalid version received ${data[1]}`);
@@ -159,7 +159,6 @@ function parseInformation(data: string[]) {
         region
     };
 }
-
 function parseDataResponseOrThrow(data: string[]) {
     const responseString = data[3];
     const responseDataString = responseString.trimEnd().split('=')[1];

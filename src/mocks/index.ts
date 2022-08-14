@@ -15,11 +15,14 @@ import {
     infoDataRAK11300,
     infoDataRAK811,
     infoDataTD1208,
+    receivedDataERIC,
     receivedDataRAK811,
     receivedDataTD1208,
+    receivedNODataERIC,
     receivedNODataRAK811,
     receivedNODataTD1208,
     validJOINRAK811,
+    validResponseERIC,
     validResponseRAK11300,
     validResponseRAK811,
     validResponseTD1208,
@@ -145,6 +148,7 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
         if (device === 'RAK811') return validResponseRAK811;
         if (device === 'TD1208') return validResponseTD1208;
         if (device === 'RAK11300') return validResponseRAK11300;
+        if (device === 'ERIC') return validResponseERIC;
         return ['', ''];
     }
 
@@ -174,12 +178,14 @@ export function buildCommandRunnerMock(): CommandRunnerBuilderMock {
     function mockGenerateDataReceived(device: DeviceModel, data: string) {
         if (device === 'RAK811') return receivedDataRAK811(data);
         if (device === 'TD1208') return receivedDataTD1208(data);
+        if (device === 'ERIC') return receivedDataERIC(data);
         return ['', ''];
     }
 
     function mockGenerateNODataReceived(device: DeviceModel) {
         if (device === 'RAK811') return receivedNODataRAK811;
         if (device === 'TD1208') return receivedNODataTD1208;
+        if (device === 'ERIC') return receivedNODataERIC;
         return ['', ''];
     }
 

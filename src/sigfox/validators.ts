@@ -8,6 +8,19 @@ export function validateOrThrowError(data: string[], errors = ['err']) {
     });
 }
 
+export function validateOKResponseOrThrow(data: string[], errors = ['err']) {
+    validateOrThrowError(data, errors);
+    return data.some(line => line.toLowerCase().startsWith('ok'));
+}
+
+export function validateSingleLineResponseOrThrow(
+    data: string[],
+    errors = ['err']
+) {
+    validateOrThrowError(data, errors);
+    return data.length === 1;
+}
+
 export function validateFrameOrThrow(data: string) {
     const errorMessage = `Cannot send frame AT$SF=${data}`;
     if (!data) throw new Error(`${errorMessage}. Invalid empty frame`);
@@ -22,4 +35,13 @@ export function validateFrameOrThrow(data: string) {
     if (!isHexadecimal.test(data))
         throw new Error(`${errorMessage}. Frame must be hexadecimal`);
     return data;
+}
+
+export function validateResponseAndWaitOrThrow(
+    data: string[],
+    endString = '+rx end',
+    errors = ['err']
+) {
+    validateOrThrowError(data, errors);
+    return data.some(line => line.toLowerCase().startsWith(endString));
 }

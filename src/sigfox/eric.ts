@@ -7,7 +7,12 @@ import {
     ExecutorCommand,
     CommandResult
 } from '../';
-import { validateFrameOrThrow, validateOrThrowError } from './validators';
+import {
+    validateFrameOrThrow,
+    validateOKResponseOrThrow,
+    validateResponseAndWaitOrThrow,
+    validateSingleLineResponseOrThrow
+} from './validators';
 
 export function buildEric(
     serialPort: ATSerialPort,
@@ -26,7 +31,7 @@ export function buildEric(
         return (executor: ExecutorCommand) =>
             executor(command, {
                 timeout: commandTimeout,
-                validation: parseValidSingleLineResponseOrThrow
+                validation: validateSingleLineResponseOrThrowWithCustomErrors
             });
     }
 
@@ -80,36 +85,90 @@ export function buildEric(
     async function sendData(data: string, { timeout = commandTimeout } = {}) {
         const frame = validateFrameOrThrow(data);
         try {
-            await runner.runCommand(executor => {
-                return executor(`AT$SF=${frame}`, {
-                    timeout,
-                    validation: () => false
-                });
-            });
+            await runner.runCommand(
+                generateSendDataCommand(frame, { timeout })
+            );
         } catch (error) {
-            logger.error('[Sigfox ERIC]', 'sendData (AT$SF)', `${error}`);
-            throw new Error(`Cannot send frame AT$SF=${data}`);
+            logger.error(
+                '[Sigfox ERIC]',
+                `sendData (AT$SF=${data},0)`,
+                `${error}`
+            );
+            throw new Error(`Cannot send frame AT$SF=${data},0`);
+        }
+    }
+
+    async function sendDataAndWaitForResponse(
+        data: string,
+        { timeout = commandTimeout } = {}
+    ) {
+        const frame = validateFrameOrThrow(data);
+        try {
+            const response = await runner.runCommand(
+                generateSendDataCommand(frame, {
+                    timeout,
+                    waitForResponse: true
+                })
+            );
+            return parseDataResponseOrThrow(response);
+        } catch (error) {
+            logger.error(
+                '[Sigfox ERIC]',
+                `sendData (AT$SF=${data},1)`,
+                `${error}`
+            );
+            throw new Error(`Cannot send frame AT$SF=${data},1`);
         }
     }
 
     return {
         getVersion,
         getInformation,
-        sendData
+        sendData,
+        sendDataAndWaitForResponse
     };
 }
 
+function generateSendDataCommand(
+    frame: string,
+    {
+        waitForResponse = false,
+        timeout = 10000
+    }: {
+        waitForResponse?: boolean;
+        timeout?: number;
+    } = {}
+) {
+    return (executor: ExecutorCommand) => {
+        const validation = waitForResponse
+            ? validateDataResponseOrThrowWithCustomErrors
+            : validateOkResponseOrThrowWithCustomErrors;
+        return executor(`AT$SF=${frame}${waitForResponse ? ',1' : ',0'}`, {
+            timeout,
+            validation
+        });
+    };
+}
+
+const ericErrors = ['err', 'atcmd_not_supported'];
 export type ERIC = ReturnType<typeof buildEric>;
 
-function parseValidSingleLineResponseOrThrow(data: string[]) {
-    validateOrThrowError(data, ['err', 'atcmd_not_supported']);
-    return data.length === 1;
+// Validators
+function validateSingleLineResponseOrThrowWithCustomErrors(data: string[]) {
+    return validateSingleLineResponseOrThrow(data, ericErrors);
 }
+function validateOkResponseOrThrowWithCustomErrors(data: string[]) {
+    return validateOKResponseOrThrow(data, ericErrors);
+}
+function validateDataResponseOrThrowWithCustomErrors(data: string[]) {
+    return validateResponseAndWaitOrThrow(data, 'rx=', ericErrors);
+}
+
+// Parsers
 function parseVersionOrThrow(data: CommandResult[]) {
     if (data.length !== 3) throw new Error(`Invalid version received ${data}`);
     return data.map(commandResult => commandResult.data[0]).join('.');
 }
-
 function extractResultForCommand(
     data: CommandResult[],
     command: string,
@@ -169,4 +228,11 @@ function parseInformation(data: CommandResult[]) {
             : information.region;
 
     return information;
+}
+function parseDataResponseOrThrow({ data }: CommandResult) {
+    if (data[0] !== 'OK') throw new Error(`Invalid response data ${data[0]}`);
+    const responseString = data[1];
+    const responseDataString = responseString.trimEnd().split('=')[1];
+    if (!responseDataString) return [];
+    return responseDataString.split(' ').map(value => parseInt(value, 16));
 }

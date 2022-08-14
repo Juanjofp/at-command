@@ -128,16 +128,5 @@ export const infoDataERIC = [
 ];
 export const errorResponseERIC = (error: string) => [error];
 export const validResponseERIC = ['OK'];
-export const receivedDataERIC = (data = '030405') => [
-    'AT$SF=010203040506070809101112,2,1\r',
-    'OK',
-    '+RX BEGIN',
-    '+RX=' + data,
-    '+RX END'
-];
-export const receivedNODataERIC = [
-    'AT$SF=010203040506070809101112,2,1\r',
-    'OK',
-    '+RX BEGIN',
-    '+RX END'
-];
+export const receivedDataERIC = (data = '03 04 05') => ['OK', 'RX=' + data];
+export const receivedNODataERIC = ['OK', 'RX='];
