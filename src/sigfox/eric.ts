@@ -151,7 +151,7 @@ function generateSendDataCommand(
 }
 
 const ericErrors = ['err', 'atcmd_not_supported'];
-export type ERIC = ReturnType<typeof buildEric>;
+export type SigfoxERIC = ReturnType<typeof buildEric>;
 
 // Validators
 function validateSingleLineResponseOrThrowWithCustomErrors(data: string[]) {

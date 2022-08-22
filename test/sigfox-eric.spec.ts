@@ -4,7 +4,7 @@ const serialPath = '/dev/tty.usbserial-FT3WBW7L';
 jest.setTimeout(60000);
 
 describe.skip('Sigfox ERIC should', () => {
-    let eric: ERIC.ERIC;
+    let eric: ERIC.SigfoxERIC;
     beforeAll(async () => {
         const serialPort = await ATSerialPortBuilder.buildSerialPort(
             serialPath,
@@ -52,7 +52,7 @@ describe.skip('Sigfox ERIC should', () => {
 });
 
 describe('Sigfox ERIC MOCK should', () => {
-    let eric: ERIC.ERIC;
+    let eric: ERIC.SigfoxERIC;
     const commandRunnerMock = buildCommandRunnerMock();
     beforeEach(async () => {
         commandRunnerMock.mockClear();
