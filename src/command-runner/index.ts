@@ -1,11 +1,11 @@
 import {
-    buildCommandRunner,
-    CommandRunner as CommandRunnerType,
-    ExecutorCommand as ExecutorCommandType
+  buildCommandRunner,
+  CommandRunner as CommandRunnerType,
+  ExecutorCommand as ExecutorCommandType
 } from './runner';
 
 export const CommandRunnerBuilder = {
-    buildCommandRunner
+  buildCommandRunner
 };
 export type CommandRunnerBuilder = typeof CommandRunnerBuilder;
 export type CommandRunner = CommandRunnerType;
